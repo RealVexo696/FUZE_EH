@@ -1,16 +1,15 @@
 """
 FUSE | FS - Discord Setup & Management Bot
 ==========================================
-Erstellt einen kompletten Roblox-RP / "Notruf Hamburg Crime Gang"-Discord:
-- ~52 Rollen (Unverified -> Owner) in korrekter Hierarchie
-- Alle Kategorien & Kanäle aus den Vorlagen-Screenshots
-- Admin-Bereich + komplette Log-Kanäle
-- Welcome-System mit Member-Counter
-- Verify-System per Button (Unverified -> Verified -> Member sichtbar)
-- Setup-Wizard via !start mit 3 Buttons (Abbruch / Nur Hinzufügen / Neu aufsetzen)
-- Befüllt wichtige Kanäle mit Embeds (Regeln, Verify-Button, Info etc.)
-
-Hosting:  Railway  |  Repository: GitHub
+Roblox-RP / Notruf-Hamburg Crime-Gang Discord
+- 52 Rollen in fester Hierarchie (Owner immer ganz oben)
+- Saubere Sichtbarkeit:
+    * Unverified  -> nur willkommen / regelwerk / verify
+    * Verified    -> + Bewerbungs-Bereich (kein verify mehr)
+    * Member      -> alles außer Verify & Bewerbung (das hat er schon)
+    * Staff       -> alles
+- Verify-System (Button), Tickets, Welcome, Logs, Büros, Lounges
+- Setup-Wizard via !start (3 Buttons im Embed)
 """
 
 import os
@@ -21,7 +20,6 @@ from typing import Optional
 
 import discord
 from discord.ext import commands
-from discord import app_commands
 from dotenv import load_dotenv
 
 # --------------------------------------------------------------------------- #
@@ -43,17 +41,25 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=None)
 
 # --------------------------------------------------------------------------- #
-# BRANDING / FARBEN
+# BRANDING
 # --------------------------------------------------------------------------- #
 BRAND_COLOR   = 0xE91E63   # FUSE Pink
 SUCCESS_COLOR = 0x2ECC71
 ERROR_COLOR   = 0xE74C3C
 INFO_COLOR    = 0x3498DB
 GOLD          = 0xF1C40F
+PURPLE        = 0x9B59B6
+DARK          = 0x2B2D31
+
+LINE = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+SOFT = "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"
+
+# Banner / Logos
+FUSE_BANNER = "https://i.imgur.com/8WqFbgM.png"   # generic dark banner fallback
+FUSE_ICON   = "https://cdn.discordapp.com/embed/avatars/0.png"
 
 # --------------------------------------------------------------------------- #
-# ROLLEN  (Index 0 = ganz oben in der Hierarchie)
-# Owner bekommt Administrator. Staff hat Mod-Rechte. Member nur Basic.
+# PERMISSIONS-PROFILE
 # --------------------------------------------------------------------------- #
 ADMIN_PERMS = discord.Permissions(administrator=True)
 MOD_PERMS = discord.Permissions(
@@ -75,28 +81,32 @@ MEMBER_PERMS = discord.Permissions(
     connect=True, speak=True, stream=True, use_voice_activation=True,
     change_nickname=True,
 )
-BASIC_PERMS = discord.Permissions(read_message_history=True, send_messages=True, connect=True, speak=True)
+BASIC_PERMS = discord.Permissions(
+    read_message_history=True, send_messages=True, connect=True, speak=True,
+)
 
-# Hierarchie von oben (Owner) nach unten (Unverified)
+# --------------------------------------------------------------------------- #
+# ROLLEN  (Index 0 = ganz oben in der Hierarchie -> Owner)
+# --------------------------------------------------------------------------- #
 ROLES: list[dict] = [
-    # Leitung
+    # ── Leitung ─────────────────────────────────────
     {"name": "👑 Owner",            "color": 0xFF0000, "hoist": True, "perms": ADMIN_PERMS},
     {"name": "👑 Co-Owner",         "color": 0xFF1A1A, "hoist": True, "perms": ADMIN_PERMS},
     {"name": "🛡️ Server-Manager",   "color": 0xFF4500, "hoist": True, "perms": ADMIN_PERMS},
-    # Admin Team
+    # ── Admin ───────────────────────────────────────
     {"name": "⚡ Head-Admin",        "color": 0xFF6600, "hoist": True, "perms": ADMIN_PERMS},
     {"name": "⚡ Admin",             "color": 0xFF8000, "hoist": True, "perms": ADMIN_PERMS},
     {"name": "⚡ Vize-Admin",        "color": 0xFF9933, "hoist": True, "perms": MOD_PERMS},
-    # Mod Team
+    # ── Moderation ──────────────────────────────────
     {"name": "🔨 Head-Moderator",   "color": 0xFFAA00, "hoist": True, "perms": MOD_PERMS},
     {"name": "🔨 Senior-Moderator", "color": 0xFFC04D, "hoist": True, "perms": MOD_PERMS},
     {"name": "🔨 Moderator",        "color": 0xFFD580, "hoist": True, "perms": MOD_PERMS},
     {"name": "🔨 Trial-Moderator",  "color": 0xFFE0B3, "hoist": True, "perms": TRIAL_MOD_PERMS},
-    # Support
+    # ── Support ─────────────────────────────────────
     {"name": "🎧 Support-Lead",     "color": 0x00CED1, "hoist": True, "perms": TRIAL_MOD_PERMS},
     {"name": "🎧 Supporter",        "color": 0x40E0D0, "hoist": True, "perms": TRIAL_MOD_PERMS},
     {"name": "🎧 Trial-Supporter",  "color": 0x7FFFD4, "hoist": True, "perms": MEMBER_PERMS},
-    # Spezial-Team
+    # ── Spezial-Team ────────────────────────────────
     {"name": "💻 Developer",        "color": 0x9B59B6, "hoist": True, "perms": ADMIN_PERMS},
     {"name": "🤖 Bot-Manager",      "color": 0x8E44AD, "hoist": True, "perms": MOD_PERMS},
     {"name": "🎨 Designer",         "color": 0xE67E22, "hoist": True, "perms": MEMBER_PERMS},
@@ -104,7 +114,7 @@ ROLES: list[dict] = [
     {"name": "📝 Recruiter",        "color": 0x16A085, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "🤝 Partner-Manager",  "color": 0x1ABC9C, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "📱 SocialMedia-Team", "color": 0xE91E63, "hoist": True, "perms": MEMBER_PERMS},
-    # Gang / Roblox-Crew (Notruf HH Style)
+    # ── Gang-Ränge ──────────────────────────────────
     {"name": "💎 Boss",             "color": 0x800080, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "💎 Underboss",        "color": 0x8B008B, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "💎 Consigliere",      "color": 0x9932CC, "hoist": True, "perms": MEMBER_PERMS},
@@ -117,27 +127,27 @@ ROLES: list[dict] = [
     {"name": "🏎️ Driver",           "color": 0x6B8E23, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "🔧 Mechanic",         "color": 0x808000, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "🛡️ Bodyguard",        "color": 0x708090, "hoist": True, "perms": MEMBER_PERMS},
-    # Member Stufen
+    # ── Member-Stufen ───────────────────────────────
     {"name": "🏆 Veteran",          "color": 0xFFD700, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "⭐ Elite",             "color": 0xFFC125, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "💠 Member+",          "color": 0x00BFFF, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "💠 Member",           "color": 0x1E90FF, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "🧪 Trial-Member",     "color": 0x87CEEB, "hoist": True, "perms": MEMBER_PERMS},
-    # Creator / Specials
+    # ── Creator / Specials ──────────────────────────
     {"name": "🎬 YouTuber",         "color": 0xFF0000, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "🎮 Twitch-Streamer",  "color": 0x6441A5, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🎵 TikToker",         "color": 0x000000, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🎵 TikToker",         "color": 0x010101, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "🖌️ Content-Creator",  "color": 0xC71585, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "✅ Verified",         "color": 0x57F287, "hoist": False, "perms": MEMBER_PERMS},
-    {"name": "🤝 Bros",             "color": 0xFF69B4, "hoist": False, "perms": MEMBER_PERMS},
+    {"name": "🤝 Fuse",             "color": 0xFF69B4, "hoist": False, "perms": MEMBER_PERMS},
     {"name": "💕 Friend",           "color": 0xFFB6C1, "hoist": False, "perms": MEMBER_PERMS},
     {"name": "🎶 DJ",               "color": 0x1DB954, "hoist": False, "perms": MEMBER_PERMS},
     {"name": "🎂 Geburtstagskind",  "color": 0xFF69B4, "hoist": False, "perms": MEMBER_PERMS},
-    # Boosts
+    # ── Boosts ──────────────────────────────────────
     {"name": "💖 Boost-King",       "color": 0xF47FFF, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "💖 Booster",          "color": 0xF47FFF, "hoist": True, "perms": MEMBER_PERMS},
     {"name": "💎 Nitro",            "color": 0xB9BBBE, "hoist": False, "perms": MEMBER_PERMS},
-    # Sonder / Strafrollen
+    # ── Sonderrollen ────────────────────────────────
     {"name": "📝 Bewerber",         "color": 0x95A5A6, "hoist": True, "perms": BASIC_PERMS},
     {"name": "👋 Gast",             "color": 0xBDC3C7, "hoist": False, "perms": BASIC_PERMS},
     {"name": "😴 AFK",              "color": 0x4F545C, "hoist": False, "perms": BASIC_PERMS},
@@ -146,12 +156,8 @@ ROLES: list[dict] = [
     {"name": "❌ Unverified",       "color": 0x99AAB5, "hoist": False, "perms": discord.Permissions.none()},
 ]
 
-# Schlüsselrollen für Permissions
 KEY_ROLES = {
     "owner":      "👑 Owner",
-    "admin":      "⚡ Admin",
-    "mod":        "🔨 Moderator",
-    "support":    "🎧 Supporter",
     "member":     "💠 Member",
     "verified":   "✅ Verified",
     "bewerber":   "📝 Bewerber",
@@ -159,72 +165,85 @@ KEY_ROLES = {
     "unverified": "❌ Unverified",
 }
 
+STAFF_ROLE_NAMES = [
+    "👑 Owner", "👑 Co-Owner", "🛡️ Server-Manager",
+    "⚡ Head-Admin", "⚡ Admin", "⚡ Vize-Admin",
+    "🔨 Head-Moderator", "🔨 Senior-Moderator", "🔨 Moderator", "🔨 Trial-Moderator",
+    "🎧 Support-Lead", "🎧 Supporter", "🎧 Trial-Supporter",
+    "💻 Developer", "🤖 Bot-Manager",
+]
+
 # --------------------------------------------------------------------------- #
-# KATEGORIEN & KANÄLE  (an Screenshots angelehnt)
-# type: "text" | "voice" | "stage" | "forum"
-# locked: True -> nur Staff/höhere Rollen
+# SICHTBARKEITS-KEYS
 # --------------------------------------------------------------------------- #
+# "lobby"          → Unverified, Verified, Member sehen (willkommen, regelwerk, tschüss)
+# "verify_only"    → NUR Unverified (Verify-Kanal verschwindet nach Verify)
+# "bewerbung"      → NUR Verified + Bewerber (Member sieht das nicht mehr!)
+# "member"         → NUR Member (+ Staff)
+# "staff"          → NUR Staff
+# Locked-Channel zusätzlich -> nur Booster / spezifische Rollen können rein
+
 STRUCTURE: list[dict] = [
     {
         "category": "📩 ✘ WILLKOMMEN",
-        "visible_to": ["unverified", "verified", "member"],
+        "visibility": "lobby",
         "channels": [
-            {"name": "👋・willkommen",   "type": "text"},
-            {"name": "📜・regelwerk",    "type": "text"},
-            {"name": "✅・verify",       "type": "text"},
-            {"name": "👋・tschüss",      "type": "text"},
+            {"name": "👋・willkommen",   "type": "text",  "visibility": "lobby"},
+            {"name": "📜・regelwerk",    "type": "text",  "visibility": "lobby"},
+            {"name": "✅・verify",       "type": "text",  "visibility": "verify_only"},
+            {"name": "👋・tschüss",      "type": "text",  "visibility": "lobby"},
         ],
     },
     {
         "category": "🌐 ✘ BEWERBUNG",
-        "visible_to": ["verified", "member"],
+        "visibility": "bewerbung",
         "channels": [
-            {"name": "🎫・ticket",        "type": "text"},
-            {"name": "👾・bewerbungschat","type": "text"},
-            {"name": "📋・formular",      "type": "text"},
-            {"name": "🎙️・warteraum",     "type": "voice"},
-            {"name": "🚪・Einreise¹",     "type": "voice", "locked": True},
-            {"name": "🚪・Einreise²",     "type": "voice", "locked": True},
+            {"name": "🎫・ticket",         "type": "text",  "visibility": "bewerbung"},
+            {"name": "👾・bewerbungschat", "type": "text",  "visibility": "bewerbung"},
+            {"name": "📋・formular",       "type": "text",  "visibility": "bewerbung"},
+            {"name": "🎙️・warteraum",      "type": "voice", "visibility": "bewerbung"},
+            {"name": "🚪・Einreise-1",     "type": "voice", "visibility": "bewerbung", "locked": True},
+            {"name": "🚪・Einreise-2",     "type": "voice", "visibility": "bewerbung", "locked": True},
         ],
     },
     {
         "category": "🎀 ✘ INFOS",
-        "visible_to": ["member"],
+        "visibility": "member",
         "channels": [
-            {"name": "✅・activity-check","type": "text"},
-            {"name": "🔔・ankündigung",   "type": "text"},
-            {"name": "🎬・meeting-clips", "type": "text"},
-            {"name": "🚀・boosts",        "type": "text"},
-            {"name": "😂・hall-of-shame", "type": "text"},
-            {"name": "🎥・free-tt-vid",   "type": "text"},
+            {"name": "✅・activity-check", "type": "text"},
+            {"name": "🔔・ankündigung",    "type": "text"},
+            {"name": "🎬・meeting-clips",  "type": "text"},
+            {"name": "🚀・boosts",         "type": "text"},
+            {"name": "😂・hall-of-shame",  "type": "text"},
+            {"name": "🎥・free-tt-vid",    "type": "text"},
         ],
     },
     {
         "category": "💬 ✘ COMMUNITY",
-        "visible_to": ["member"],
+        "visibility": "member",
         "channels": [
-            {"name": "💬・chat",          "type": "text"},
-            {"name": "🎨・media",         "type": "text"},
-            {"name": "🤣・memes",         "type": "text"},
-            {"name": "🎮・gaming",        "type": "text"},
-            {"name": "🤖・bot-commands",  "type": "text"},
-            {"name": "💡・vorschläge",    "type": "text"},
+            {"name": "💬・chat",         "type": "text"},
+            {"name": "🎨・media",        "type": "text"},
+            {"name": "🤣・memes",        "type": "text"},
+            {"name": "🎮・gaming",       "type": "text"},
+            {"name": "🤖・bot-commands", "type": "text"},
+            {"name": "💡・vorschläge",   "type": "text"},
         ],
     },
     {
         "category": "📱 ✘ SOCIALMEDIA",
-        "visible_to": ["member"],
+        "visibility": "member",
         "channels": [
-            {"name": "💖・cani",          "type": "text"},
-            {"name": "📱・socialmedia",   "type": "text"},
-            {"name": "📸・instagram",     "type": "text"},
-            {"name": "🎵・tiktok",        "type": "text"},
-            {"name": "🎬・youtube",       "type": "text"},
+            {"name": "💖・cani",        "type": "text"},
+            {"name": "📱・socialmedia", "type": "text"},
+            {"name": "📸・instagram",   "type": "text"},
+            {"name": "🎵・tiktok",      "type": "text"},
+            {"name": "🎬・youtube",     "type": "text"},
         ],
     },
     {
         "category": "📞 ✘ TALKS",
-        "visible_to": ["member"],
+        "visibility": "member",
         "channels": [
             {"name": "🎤・Stage",         "type": "stage"},
             {"name": "🌐・FFA-VoiceChat", "type": "voice"},
@@ -235,87 +254,79 @@ STRUCTURE: list[dict] = [
         ],
     },
     {
-        "category": "🧱 ✘ BROS MERCH",
-        "visible_to": ["member"],
+        "category": "🧱 ✘ FUSE MERCH",
+        "visibility": "member",
         "channels": [
-            {"name": "🦺・weste",         "type": "text"},
-            {"name": "📿・armband",       "type": "text"},
-            {"name": "👕・merch",         "type": "text"},
-            {"name": "👕・trikot",        "type": "text"},
-            {"name": "👕・polo",          "type": "text"},
+            {"name": "🦺・weste",   "type": "text"},
+            {"name": "📿・armband", "type": "text"},
+            {"name": "👕・merch",   "type": "text"},
+            {"name": "👕・trikot",  "type": "text"},
+            {"name": "👕・polo",    "type": "text"},
         ],
     },
     {
         "category": "📓 ✘ GANG INFOS",
-        "visible_to": ["member"],
+        "visibility": "member",
         "channels": [
-            {"name": "💗・farbe",            "type": "text"},
-            {"name": "🎨・rollensystem",     "type": "text"},
-            {"name": "🎮・roblox-gruppe",    "type": "text"},
-            {"name": "🏠・anwesen",          "type": "text"},
-            {"name": "🛡️・partnerschaft",    "type": "text"},
+            {"name": "💗・farbe",         "type": "text"},
+            {"name": "🎨・rollensystem",  "type": "text"},
+            {"name": "🎮・roblox-gruppe", "type": "text"},
+            {"name": "🏠・anwesen",       "type": "text"},
+            {"name": "🛡️・partnerschaft", "type": "text"},
         ],
     },
     {
-        "category": "🔒 LOUNGES",
-        "visible_to": ["member"],
+        "category": "🔒 ✘ LOUNGES",
+        "visibility": "member",
         "channels": [
-            {"name": "🎀・LOUNGE-400-RBX",   "type": "voice", "locked": True},
-            {"name": "♟️・Nils-Luke",         "type": "voice", "locked": True},
-            {"name": "💎・M-J-S-F",           "type": "voice", "locked": True},
-            {"name": "💬・lounge-chat",       "type": "text",  "locked": True},
-            {"name": "🍺・Bier-Keller",       "type": "voice", "locked": True},
+            {"name": "🎀・LOUNGE-400-RBX", "type": "voice", "locked": True},
+            {"name": "♟️・Nils-Luke",       "type": "voice", "locked": True},
+            {"name": "💎・M-J-S-F",         "type": "voice", "locked": True},
+            {"name": "💬・lounge-chat",     "type": "text",  "locked": True},
+            {"name": "🍺・Bier-Keller",     "type": "voice", "locked": True},
         ],
     },
     {
         "category": "🏢 ✘ BÜROS",
-        "visible_to": ["staff"],
+        "visibility": "staff",
         "channels": [
-            {"name": "👑・Owner-Büro",       "type": "voice", "staff_only": True},
-            {"name": "⚡・Admin-Büro",        "type": "voice", "staff_only": True},
-            {"name": "🔨・Mod-Büro",          "type": "voice", "staff_only": True},
-            {"name": "🎧・Support-Büro",      "type": "voice", "staff_only": True},
-            {"name": "📊・Meeting-Raum",      "type": "voice", "staff_only": True},
+            {"name": "👑・Owner-Büro",   "type": "voice", "visibility": "owner_only"},
+            {"name": "⚡・Admin-Büro",    "type": "voice", "visibility": "staff"},
+            {"name": "🔨・Mod-Büro",      "type": "voice", "visibility": "staff"},
+            {"name": "🎧・Support-Büro",  "type": "voice", "visibility": "staff"},
+            {"name": "📊・Meeting-Raum",  "type": "voice", "visibility": "staff"},
         ],
     },
     {
         "category": "🛡️ ✘ ADMIN",
-        "visible_to": ["staff"],
+        "visibility": "staff",
         "channels": [
-            {"name": "👑・owner-chat",        "type": "text", "owner_only": True},
-            {"name": "⚡・admin-chat",         "type": "text", "staff_only": True},
-            {"name": "🔨・mod-chat",           "type": "text", "staff_only": True},
-            {"name": "🎧・support-chat",       "type": "text", "staff_only": True},
-            {"name": "📋・team-ankündigung",   "type": "text", "staff_only": True},
-            {"name": "📝・team-todo",          "type": "text", "staff_only": True},
-            {"name": "🚨・report-eingang",     "type": "text", "staff_only": True},
+            {"name": "👑・owner-chat",      "type": "text", "visibility": "owner_only"},
+            {"name": "⚡・admin-chat",       "type": "text", "visibility": "staff"},
+            {"name": "🔨・mod-chat",         "type": "text", "visibility": "staff"},
+            {"name": "🎧・support-chat",     "type": "text", "visibility": "staff"},
+            {"name": "📋・team-ankündigung", "type": "text", "visibility": "staff"},
+            {"name": "📝・team-todo",        "type": "text", "visibility": "staff"},
+            {"name": "🚨・report-eingang",   "type": "text", "visibility": "staff"},
         ],
     },
     {
         "category": "📋 ✘ LOGS",
-        "visible_to": ["staff"],
+        "visibility": "staff",
         "channels": [
-            {"name": "📥・join-logs",          "type": "text", "staff_only": True, "log": "join"},
-            {"name": "📤・leave-logs",         "type": "text", "staff_only": True, "log": "leave"},
-            {"name": "✅・verify-logs",        "type": "text", "staff_only": True, "log": "verify"},
-            {"name": "💬・message-logs",       "type": "text", "staff_only": True, "log": "message"},
-            {"name": "🎙️・voice-logs",         "type": "text", "staff_only": True, "log": "voice"},
-            {"name": "🎭・role-logs",          "type": "text", "staff_only": True, "log": "role"},
-            {"name": "📁・channel-logs",       "type": "text", "staff_only": True, "log": "channel"},
-            {"name": "🌐・server-logs",        "type": "text", "staff_only": True, "log": "server"},
-            {"name": "🎫・ticket-logs",        "type": "text", "staff_only": True, "log": "ticket"},
-            {"name": "⚖️・moderation-logs",    "type": "text", "staff_only": True, "log": "moderation"},
-            {"name": "🤖・bot-logs",           "type": "text", "staff_only": True, "log": "bot"},
+            {"name": "📥・join-logs",       "type": "text", "log": "join"},
+            {"name": "📤・leave-logs",      "type": "text", "log": "leave"},
+            {"name": "✅・verify-logs",     "type": "text", "log": "verify"},
+            {"name": "💬・message-logs",    "type": "text", "log": "message"},
+            {"name": "🎙️・voice-logs",      "type": "text", "log": "voice"},
+            {"name": "🎭・role-logs",       "type": "text", "log": "role"},
+            {"name": "📁・channel-logs",    "type": "text", "log": "channel"},
+            {"name": "🌐・server-logs",     "type": "text", "log": "server"},
+            {"name": "🎫・ticket-logs",     "type": "text", "log": "ticket"},
+            {"name": "⚖️・moderation-logs", "type": "text", "log": "moderation"},
+            {"name": "🤖・bot-logs",        "type": "text", "log": "bot"},
         ],
     },
-]
-
-STAFF_ROLE_NAMES = [
-    "👑 Owner", "👑 Co-Owner", "🛡️ Server-Manager",
-    "⚡ Head-Admin", "⚡ Admin", "⚡ Vize-Admin",
-    "🔨 Head-Moderator", "🔨 Senior-Moderator", "🔨 Moderator", "🔨 Trial-Moderator",
-    "🎧 Support-Lead", "🎧 Supporter", "🎧 Trial-Supporter",
-    "💻 Developer", "🤖 Bot-Manager",
 ]
 
 # --------------------------------------------------------------------------- #
@@ -331,31 +342,31 @@ def find_channel(guild: discord.Guild, name: str) -> Optional[discord.abc.GuildC
     return discord.utils.get(guild.channels, name=name)
 
 def get_log_channel(guild: discord.Guild, log_type: str) -> Optional[discord.TextChannel]:
-    """Findet einen Log-Kanal anhand des log-Keys."""
-    mapping = {
+    suffix_map = {
         "join": "join-logs", "leave": "leave-logs", "verify": "verify-logs",
         "message": "message-logs", "voice": "voice-logs", "role": "role-logs",
         "channel": "channel-logs", "server": "server-logs", "ticket": "ticket-logs",
         "moderation": "moderation-logs", "bot": "bot-logs",
     }
-    suffix = mapping.get(log_type)
-    if not suffix:
-        return None
+    suffix = suffix_map.get(log_type)
+    if not suffix: return None
     for ch in guild.text_channels:
         if ch.name.endswith(suffix):
             return ch
     return None
 
-def build_overwrites(guild: discord.Guild, visible_to: list[str],
-                     locked: bool = False, staff_only: bool = False,
-                     owner_only: bool = False) -> dict:
+
+def build_overwrites(guild: discord.Guild, visibility: str, locked: bool = False) -> dict:
     """
-    Erstellt Permission-Overwrites für eine Kategorie/einen Kanal.
-    visible_to gibt an, welche Stufe den Kanal sehen darf:
-       - "unverified": jeder (auch Unverified)
-       - "verified":   ab Verified
-       - "member":     ab Member
-       - "staff":      nur Team
+    Erstellt Permission-Overwrites basierend auf einer Visibility-Stufe.
+
+    Stufen:
+      lobby        -> alle (Unverified/Verified/Member) dürfen sehen, nur Verified+Member schreiben
+      verify_only  -> NUR Unverified (sehen + reagieren) - Verified/Member NICHT mehr
+      bewerbung    -> NUR Verified + Bewerber - Member NICHT, Unverified NICHT
+      member       -> NUR Member (+ Trial-Member, Veteran...) - Unverified/Verified NICHT
+      staff        -> NUR Team
+      owner_only   -> NUR Owner + Co-Owner
     """
     everyone   = guild.default_role
     unverified = find_role(guild, KEY_ROLES["unverified"])
@@ -366,63 +377,111 @@ def build_overwrites(guild: discord.Guild, visible_to: list[str],
 
     ow: dict = {}
 
-    # Standard: @everyone darf nichts sehen
+    # Default: nichts sehen
     ow[everyone] = discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False)
 
-    if "unverified" in visible_to:
-        ow[everyone] = discord.PermissionOverwrite(view_channel=True, read_message_history=True,
-                                                   send_messages=False, add_reactions=False, connect=False)
+    if visibility == "lobby":
+        # Jeder (auch ohne Rolle) sieht die Lobby
+        ow[everyone] = discord.PermissionOverwrite(
+            view_channel=True, read_message_history=True,
+            send_messages=False, add_reactions=False, connect=False,
+        )
         if unverified:
-            ow[unverified] = discord.PermissionOverwrite(view_channel=True, send_messages=False, connect=False)
-    if "verified" in visible_to and verified:
-        ow[verified] = discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True, speak=True)
+            ow[unverified] = discord.PermissionOverwrite(view_channel=True, send_messages=False)
+        if verified:
+            ow[verified]   = discord.PermissionOverwrite(view_channel=True, send_messages=True)
+        if member:
+            ow[member]     = discord.PermissionOverwrite(view_channel=True, send_messages=True)
+
+    elif visibility == "verify_only":
+        # Nur Unverified sieht und kann mit dem Verify-Button interagieren
+        if unverified:
+            ow[unverified] = discord.PermissionOverwrite(
+                view_channel=True, read_message_history=True,
+                send_messages=False, add_reactions=True,
+            )
+        # Verified & Member explizit ausblenden!
+        if verified: ow[verified] = discord.PermissionOverwrite(view_channel=False)
+        if member:   ow[member]   = discord.PermissionOverwrite(view_channel=False)
+
+    elif visibility == "bewerbung":
+        # Nur Verified + Bewerber - NICHT Member, NICHT Unverified
+        if verified:
+            ow[verified] = discord.PermissionOverwrite(
+                view_channel=True, send_messages=True, connect=True, speak=True,
+                read_message_history=True,
+            )
         if bewerber:
-            ow[bewerber] = discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True, speak=True)
-    if "member" in visible_to and member:
-        ow[member] = discord.PermissionOverwrite(view_channel=True, send_messages=True,
-                                                 connect=True, speak=True, stream=True)
+            ow[bewerber] = discord.PermissionOverwrite(
+                view_channel=True, send_messages=True, connect=True, speak=True,
+            )
+        if unverified: ow[unverified] = discord.PermissionOverwrite(view_channel=False)
+        if member:     ow[member]     = discord.PermissionOverwrite(view_channel=False)
 
-    # Staff sieht immer alles
-    for rn in STAFF_ROLE_NAMES:
-        r = find_role(guild, rn)
-        if r:
-            ow[r] = discord.PermissionOverwrite(view_channel=True, send_messages=True,
-                                                connect=True, speak=True, read_message_history=True,
-                                                manage_messages=True)
+    elif visibility == "member":
+        if member:
+            ow[member] = discord.PermissionOverwrite(
+                view_channel=True, send_messages=True, connect=True, speak=True, stream=True,
+                read_message_history=True, add_reactions=True, embed_links=True, attach_files=True,
+            )
+        if unverified: ow[unverified] = discord.PermissionOverwrite(view_channel=False)
+        if verified:   ow[verified]   = discord.PermissionOverwrite(view_channel=False)
 
-    if visible_to == ["staff"]:
-        # Nur Team
-        ow[everyone] = discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False)
+    elif visibility == "staff":
         if unverified: ow[unverified] = discord.PermissionOverwrite(view_channel=False)
         if verified:   ow[verified]   = discord.PermissionOverwrite(view_channel=False)
         if member:     ow[member]     = discord.PermissionOverwrite(view_channel=False)
 
-    if staff_only:
-        ow[everyone] = discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False)
-        if member:   ow[member]   = discord.PermissionOverwrite(view_channel=False)
-        if verified: ow[verified] = discord.PermissionOverwrite(view_channel=False)
+    elif visibility == "owner_only":
+        # Nur Owner / Co-Owner sehen (zusätzlich zu Staff-Overrides unten wird wieder
+        # hier am Ende „Team sieht alles" eingeschränkt)
+        if unverified: ow[unverified] = discord.PermissionOverwrite(view_channel=False)
+        if verified:   ow[verified]   = discord.PermissionOverwrite(view_channel=False)
+        if member:     ow[member]     = discord.PermissionOverwrite(view_channel=False)
 
-    if owner_only:
-        ow = {everyone: discord.PermissionOverwrite(view_channel=False, send_messages=False, connect=False)}
+    # ── Staff sieht IMMER alles (außer owner_only)
+    if visibility != "owner_only":
+        for rn in STAFF_ROLE_NAMES:
+            r = find_role(guild, rn)
+            if r:
+                ow[r] = discord.PermissionOverwrite(
+                    view_channel=True, send_messages=True,
+                    connect=True, speak=True, read_message_history=True,
+                    manage_messages=True,
+                )
+    else:
         for rn in ("👑 Owner", "👑 Co-Owner"):
             r = find_role(guild, rn)
             if r:
-                ow[r] = discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True, speak=True)
+                ow[r] = discord.PermissionOverwrite(
+                    view_channel=True, send_messages=True,
+                    connect=True, speak=True, read_message_history=True,
+                    manage_messages=True,
+                )
 
+    # ── Locked Channels: nur Booster + Staff
     if locked:
-        # Lounges etc. - nur eingeladene/höhere Stufen
-        ow[everyone] = discord.PermissionOverwrite(view_channel=True, send_messages=False, connect=False)
-        if member:
-            ow[member] = discord.PermissionOverwrite(view_channel=True, send_messages=False, connect=False)
-        # Staff darf trotzdem rein - bereits oben gesetzt
+        # alle Standardrollen wieder aussperren
+        if member:     ow[member]     = discord.PermissionOverwrite(view_channel=False)
+        if verified:   ow[verified]   = discord.PermissionOverwrite(view_channel=False)
+        if unverified: ow[unverified] = discord.PermissionOverwrite(view_channel=False)
         booster = find_role(guild, "💖 Booster")
         if booster:
-            ow[booster] = discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True, speak=True)
+            ow[booster] = discord.PermissionOverwrite(
+                view_channel=True, send_messages=True, connect=True, speak=True,
+            )
+        boost_king = find_role(guild, "💖 Boost-King")
+        if boost_king:
+            ow[boost_king] = discord.PermissionOverwrite(
+                view_channel=True, send_messages=True, connect=True, speak=True,
+            )
 
-    # Muted-Rolle: nichts schreiben/sprechen
+    # ── Muted: darf nie schreiben/sprechen
     if muted:
-        ow[muted] = discord.PermissionOverwrite(send_messages=False, speak=False, add_reactions=False,
-                                                stream=False, send_messages_in_threads=False)
+        ow[muted] = discord.PermissionOverwrite(
+            send_messages=False, speak=False, add_reactions=False,
+            stream=False, send_messages_in_threads=False,
+        )
 
     return ow
 
@@ -430,11 +489,10 @@ def build_overwrites(guild: discord.Guild, visible_to: list[str],
 # --------------------------------------------------------------------------- #
 # SETUP-LOGIK
 # --------------------------------------------------------------------------- #
-async def create_roles(guild: discord.Guild, status_msg: discord.Message) -> None:
-    """Erstellt alle Rollen, falls noch nicht vorhanden."""
+async def create_roles(guild: discord.Guild) -> None:
+    """Erstellt alle fehlenden Rollen."""
     created = 0
-    # Wir gehen UMGEKEHRT durch die Liste (unten zuerst), damit die zuletzt
-    # erstellte Rolle (Owner) am höchsten ist.
+    # Umgekehrt (unten -> oben), damit zuletzt erstellte = Owner ganz oben
     for role_def in reversed(ROLES):
         if find_role(guild, role_def["name"]):
             continue
@@ -448,61 +506,70 @@ async def create_roles(guild: discord.Guild, status_msg: discord.Message) -> Non
                 reason="FUSE Setup",
             )
             created += 1
-            await asyncio.sleep(0.4)  # Rate-Limit Schutz
+            await asyncio.sleep(0.35)
         except Exception as e:
-            log.warning("Rolle '%s' konnte nicht erstellt werden: %s", role_def["name"], e)
+            log.warning("Rolle '%s' fehlgeschlagen: %s", role_def["name"], e)
     log.info("Rollen erstellt: %s", created)
+    await enforce_role_hierarchy(guild)
 
-    # Reihenfolge korrigieren (Bot-Rolle muss höher sein als unsere höchste!)
+
+async def enforce_role_hierarchy(guild: discord.Guild) -> None:
+    """
+    Erzwingt: Owner steht IMMER ganz oben, danach Co-Owner, dann der Rest
+    in der Reihenfolge der ROLES-Liste. Bot-Rolle bleibt technisch darüber.
+    """
     try:
-        positions = {}
-        # Bot eigene Rolle bleibt ganz oben
         bot_top = guild.me.top_role
+        positions = {}
+        # base = höchste freie Position direkt unter der Bot-Rolle
         base = bot_top.position - 1
         for i, role_def in enumerate(ROLES):
             r = find_role(guild, role_def["name"])
-            if r and r < bot_top:
+            if r and r < bot_top and not r.managed:
                 positions[r] = max(1, base - i)
         if positions:
-            await guild.edit_role_positions(positions=positions, reason="FUSE Setup Order")
+            await guild.edit_role_positions(positions=positions, reason="FUSE Hierarchie")
+            log.info("Rollen-Hierarchie gesetzt (Owner ganz oben).")
     except Exception as e:
-        log.warning("Rollen-Positionen konnten nicht gesetzt werden: %s", e)
+        log.warning("Rollen-Reihenfolge nicht setzbar: %s", e)
 
 
 async def create_structure(guild: discord.Guild) -> None:
-    """Erstellt alle Kategorien und Kanäle gemäß STRUCTURE."""
+    """Erstellt alle Kategorien und Kanäle."""
     for cat_def in STRUCTURE:
-        cat_name = cat_def["category"]
-        category = find_category(guild, cat_name)
-        ow = build_overwrites(guild, cat_def["visible_to"])
+        cat_name   = cat_def["category"]
+        cat_vis    = cat_def["visibility"]
+        cat_ow     = build_overwrites(guild, cat_vis)
+        category   = find_category(guild, cat_name)
         if not category:
             try:
-                category = await guild.create_category(cat_name, overwrites=ow, reason="FUSE Setup")
+                category = await guild.create_category(cat_name, overwrites=cat_ow, reason="FUSE Setup")
                 await asyncio.sleep(0.3)
             except Exception as e:
                 log.warning("Kategorie '%s' fehlgeschlagen: %s", cat_name, e)
                 continue
         else:
             try:
-                await category.edit(overwrites=ow)
+                await category.edit(overwrites=cat_ow)
             except Exception:
                 pass
 
         for ch_def in cat_def["channels"]:
             ch_name = ch_def["name"]
-            ctype = ch_def.get("type", "text")
-            locked = ch_def.get("locked", False)
-            staff_only = ch_def.get("staff_only", False)
-            owner_only = ch_def.get("owner_only", False)
+            ctype   = ch_def.get("type", "text")
+            ch_vis  = ch_def.get("visibility", cat_vis)
+            locked  = ch_def.get("locked", False)
 
             if find_channel(guild, ch_name):
+                # Bestehender Kanal -> Permissions neu setzen
+                ch = find_channel(guild, ch_name)
+                try:
+                    await ch.edit(overwrites=build_overwrites(guild, ch_vis, locked=locked))
+                except Exception:
+                    pass
                 continue
 
-            chan_ow = build_overwrites(
-                guild, cat_def["visible_to"],
-                locked=locked, staff_only=staff_only, owner_only=owner_only
-            )
-
+            chan_ow = build_overwrites(guild, ch_vis, locked=locked)
             try:
                 if ctype == "text":
                     await guild.create_text_channel(ch_name, category=category, overwrites=chan_ow, reason="FUSE Setup")
@@ -519,7 +586,7 @@ async def create_structure(guild: discord.Guild) -> None:
 
 
 async def wipe_server(guild: discord.Guild) -> None:
-    """Löscht ALLE Kanäle und (vom Bot löschbare) Rollen."""
+    """Löscht ALLE Kanäle und alle löschbaren Rollen."""
     for ch in list(guild.channels):
         try:
             await ch.delete(reason="FUSE Reset")
@@ -536,145 +603,280 @@ async def wipe_server(guild: discord.Guild) -> None:
             pass
 
 
+# --------------------------------------------------------------------------- #
+# SCHÖNE EMBEDS
+# --------------------------------------------------------------------------- #
+def banner_embed(title: str, description: str, color: int = BRAND_COLOR) -> discord.Embed:
+    """Großes Banner-Embed im FUSE-Style."""
+    emb = discord.Embed(
+        title=title,
+        description=f"{LINE}\n{description}\n{LINE}",
+        color=color,
+        timestamp=datetime.utcnow(),
+    )
+    emb.set_footer(text=f"{SERVER_NAME}  •  Roblox Roleplay Community")
+    return emb
+
+
 async def fill_channels(guild: discord.Guild) -> None:
-    """Füllt wichtige Kanäle mit Inhalten (Regeln, Verify-Button etc.)."""
-    # --- Regelwerk ---
+    """Füllt wichtige Kanäle mit hübschen Embeds."""
+
+    # ════════════════════════════════════════════════════════════
+    # 1) REGELWERK
+    # ════════════════════════════════════════════════════════════
     rules_ch = discord.utils.get(guild.text_channels, name="📜・regelwerk")
     if rules_ch and not [m async for m in rules_ch.history(limit=1)]:
-        emb = discord.Embed(
-            title="📜 Regelwerk – FUSE | FS",
+        # Header
+        header = discord.Embed(
             description=(
-                "Willkommen auf **FUSE | FS** – einer Roblox Roleplay / Crime-Gang Community.\n"
-                "Damit hier alles entspannt bleibt, halte dich bitte an die folgenden Regeln.\n"
-                "*Dieser Server ist ausschließlich für Roblox-Roleplay gedacht – nichts davon hat einen Real-Life-Bezug.*"
+                f"# 📜 {SERVER_NAME} — REGELWERK\n"
+                f"{LINE}\n"
+                f"> *Willkommen in unserer Familie.*\n"
+                f"> *Bitte lies dir die Regeln sorgfältig durch — sie gelten für **jeden**.*\n"
+                f"> *Mit dem Verify akzeptierst du diese Regeln automatisch.*\n"
+                f"{LINE}"
             ),
             color=BRAND_COLOR,
         )
-        emb.add_field(name="§1 Respekt", value="Behandle jedes Mitglied freundlich. Keine Beleidigungen, kein Mobbing, kein Rassismus.", inline=False)
-        emb.add_field(name="§2 Kein Spam", value="Kein Spammen von Nachrichten, Pings, Emojis oder Reaktionen.", inline=False)
-        emb.add_field(name="§3 Keine Werbung", value="Werbung jeglicher Art ist ohne Erlaubnis verboten.", inline=False)
-        emb.add_field(name="§4 NSFW", value="NSFW-Inhalte sind strengstens untersagt.", inline=False)
-        emb.add_field(name="§5 Discord-Richtlinien", value="Die [Discord ToS](https://discord.com/terms) gelten zu jeder Zeit.", inline=False)
-        emb.add_field(name="§6 Channel-Themen", value="Halte dich an die Themen der jeweiligen Kanäle.", inline=False)
-        emb.add_field(name="§7 Roleplay", value="In RP-Kanälen wird im Charakter geschrieben. Keine OOC-Diskussionen.", inline=False)
-        emb.add_field(name="§8 Team-Anweisungen", value="Anweisungen des Teams sind zu befolgen.", inline=False)
-        emb.add_field(name="§9 Bugs / Glitches", value="Bekannte Bugs oder Exploits dem Team melden – nicht ausnutzen.", inline=False)
-        emb.add_field(name="§10 Account-Sicherheit", value="Teile keine Accountdaten. Phishing = Bann.", inline=False)
-        emb.set_footer(text="Mit dem Verify akzeptierst du diese Regeln.")
-        await rules_ch.send(embed=emb)
+        header.set_image(url="https://singlecolorimage.com/get/E91E63/800x4.png")
+        await rules_ch.send(embed=header)
 
-    # --- Verify ---
+        # Regelblöcke
+        rules = [
+            ("🤝", "§1  Respekt",        "Behandle jedes Mitglied freundlich. **Keine** Beleidigungen, kein Mobbing, kein Rassismus, kein Sexismus."),
+            ("🔇", "§2  Kein Spam",      "Kein Spammen von Nachrichten, Pings, Emojis oder Reaktionen. Halte den Chat sauber."),
+            ("📢", "§3  Keine Werbung",  "Werbung jeglicher Art (DM oder Channel) ist **ohne Erlaubnis verboten**."),
+            ("🔞", "§4  NSFW",           "NSFW-, Gore- oder anstößige Inhalte sind **strikt untersagt**."),
+            ("📜", "§5  Discord-ToS",    "Die [Discord Richtlinien](https://discord.com/terms) gelten zu jeder Zeit."),
+            ("💬", "§6  Channel-Themen", "Halte dich an die Themen der jeweiligen Kanäle. Off-Topic gehört in <#💬・chat>."),
+            ("🎭", "§7  Roleplay",       "In RP-Kanälen wird **im Charakter** geschrieben. Keine OOC-Diskussionen."),
+            ("🛡️", "§8  Team-Anweisung", "Anweisungen des Teams sind ohne Diskussion zu befolgen."),
+            ("🐛", "§9  Bugs / Exploits","Bekannte Bugs melden — **niemals** ausnutzen."),
+            ("🔐", "§10 Account",        "Teile keine Account-Daten. Phishing-Links = **sofortiger Bann**."),
+            ("🎮", "§11 Roblox-Only",    "Dieser Server ist **ausschließlich** Roblox-Roleplay. Kein Real-Life-Bezug."),
+            ("⚖️", "§12 Strafen",        "Verstöße werden mit Verwarnung, Mute, Kick oder Bann sanktioniert."),
+        ]
+        body = discord.Embed(color=BRAND_COLOR)
+        for emoji, name, desc in rules:
+            body.add_field(name=f"{emoji}  **{name}**", value=f"> {desc}", inline=False)
+        body.set_footer(text=f"{SERVER_NAME}  •  Stand: heute  •  Verstöße = Konsequenzen")
+        await rules_ch.send(embed=body)
+
+    # ════════════════════════════════════════════════════════════
+    # 2) VERIFY
+    # ════════════════════════════════════════════════════════════
     verify_ch = discord.utils.get(guild.text_channels, name="✅・verify")
     if verify_ch and not [m async for m in verify_ch.history(limit=1)]:
         emb = discord.Embed(
-            title="✅ Verifizierung",
+            title="🔐  VERIFIZIERUNG  •  FUSE | FS",
             description=(
-                "Klicke auf den Button unten, um dich zu verifizieren.\n\n"
-                "Damit bestätigst du, dass du das **Regelwerk** gelesen hast und "
-                "Zugriff auf den Bewerbungs-Bereich erhältst.\n\n"
-                "Nach erfolgreicher Bewerbung wirst du zum **Member** befördert "
-                "und siehst alle Kanäle."
+                f"{LINE}\n"
+                f"### 👋  Willkommen bei **{SERVER_NAME}**!\n\n"
+                f"Bevor du den vollen Server erkunden kannst, musst du dich **kurz verifizieren**.\n"
+                f"Damit bestätigst du, dass du das <#📜・regelwerk> gelesen hast.\n\n"
+                f"**🔽 So geht's:**\n"
+                f"`1.` Klicke unten auf den grünen Button **✅ Verifizieren**\n"
+                f"`2.` Du erhältst sofort Zugriff auf den **Bewerbungs-Bereich**\n"
+                f"`3.` Bewirb dich → werde **Member** → sieh alle Kanäle\n"
+                f"{LINE}\n"
+                f"*Probleme? Öffne im Anschluss ein Ticket unter <#🎫・ticket>.*"
             ),
             color=SUCCESS_COLOR,
         )
-        emb.set_footer(text="FUSE | FS – Verifizierungssystem")
+        emb.set_thumbnail(url=guild.icon.url if guild.icon else FUSE_ICON)
+        emb.set_image(url="https://singlecolorimage.com/get/2ECC71/800x4.png")
+        emb.set_footer(text=f"{SERVER_NAME}  •  Verifizierungs-System")
         await verify_ch.send(embed=emb, view=VerifyView())
 
-    # --- Willkommen-Info ---
+    # ════════════════════════════════════════════════════════════
+    # 3) WILLKOMMEN-INFO
+    # ════════════════════════════════════════════════════════════
     welcome_ch = discord.utils.get(guild.text_channels, name="👋・willkommen")
     if welcome_ch and not [m async for m in welcome_ch.history(limit=1)]:
+        rg = discord.utils.get(guild.text_channels, name="📜・regelwerk")
+        vy = discord.utils.get(guild.text_channels, name="✅・verify")
         emb = discord.Embed(
-            title=f"🎉 Willkommen auf {SERVER_NAME}!",
+            title=f"🎉  WILLKOMMEN AUF {SERVER_NAME.upper()}",
             description=(
-                "Schön dass du da bist!\n\n"
-                "➡️ Lies dir das **<#regelwerk>** durch.\n"
-                "➡️ Anschließend kannst du dich im Kanal **<#verify>** verifizieren.\n"
-                "➡️ Danach geht's weiter in den **Bewerbungs-Bereich**.\n\n"
-                "Viel Spaß auf unserem Server! 💎"
+                f"{LINE}\n"
+                f"### 💎  Roblox  ✘  Roleplay  ✘  Crime-Gang\n\n"
+                f"Schön dass du den Weg zu uns gefunden hast!\n"
+                f"Wir sind eine **aktive Community** rund um Roblox-Roleplay & **Notruf Hamburg**.\n\n"
+                f"**📌  Was du tun musst:**\n"
+                f"➤  Lies dir das {rg.mention if rg else '#regelwerk'} durch\n"
+                f"➤  Verifiziere dich im {vy.mention if vy else '#verify'}\n"
+                f"➤  Bewirb dich im **Bewerbungs-Bereich**\n"
+                f"➤  Werde **Member** & erlebe die volle Community 🎮\n"
+                f"{LINE}\n"
+                f"*Viel Spaß auf **{SERVER_NAME}**! 💎*"
             ),
             color=BRAND_COLOR,
         )
+        emb.set_thumbnail(url=guild.icon.url if guild.icon else FUSE_ICON)
+        emb.set_image(url="https://singlecolorimage.com/get/E91E63/800x4.png")
+        emb.set_footer(text=f"{SERVER_NAME}  •  Welcome Center")
         await welcome_ch.send(embed=emb)
 
-    # --- Bewerbung Formular ---
+    # ════════════════════════════════════════════════════════════
+    # 4) BEWERBUNGS-FORMULAR
+    # ════════════════════════════════════════════════════════════
     form_ch = discord.utils.get(guild.text_channels, name="📋・formular")
     if form_ch and not [m async for m in form_ch.history(limit=1)]:
         emb = discord.Embed(
-            title="📋 Bewerbungs-Formular",
+            title="📋  BEWERBUNG  •  FUSE | FS",
             description=(
-                "Möchtest du Member werden? Dann fülle bitte folgendes Formular aus "
-                "und poste es im Kanal **#bewerbungschat**.\n\n"
-                "```\n"
-                "1. Wie heißt du im Roblox?\n"
-                "2. Wie alt bist du?\n"
-                "3. Wie lange spielst du schon Notruf Hamburg / Roblox-RP?\n"
-                "4. Warum möchtest du zu FUSE?\n"
-                "5. Was kannst du der Gang bieten?\n"
-                "6. Hast du ein Mikrofon?\n"
-                "7. Bist du aktiv (Std/Woche)?\n"
-                "```\n"
-                "Das Team meldet sich anschließend bei dir!"
+                f"{LINE}\n"
+                f"### 🎯  Du möchtest **Member** werden?\n"
+                f"Dann fülle das untenstehende Formular **vollständig** aus und poste es im "
+                f"<#👾・bewerbungschat>.\n\n"
+                f"```yaml\n"
+                f"━━━━━ BEWERBUNG ━━━━━\n"
+                f"1. Roblox-Name:         \n"
+                f"2. Alter:               \n"
+                f"3. RP-Erfahrung:        \n"
+                f"4. Warum FUSE?:         \n"
+                f"5. Was bietest du uns?: \n"
+                f"6. Mikrofon (Ja/Nein):  \n"
+                f"7. Aktivität (Std/Wo):  \n"
+                f"8. Discord-Erfahrung:   \n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"```\n"
+                f"⏱️  **Bearbeitungszeit:** in der Regel **24 – 48 Std.**\n"
+                f"🎤  **Voice-Interview:** möglich (Einreise¹ / Einreise²)\n"
+                f"{LINE}"
             ),
             color=INFO_COLOR,
         )
+        emb.set_image(url="https://singlecolorimage.com/get/3498DB/800x4.png")
+        emb.set_footer(text=f"{SERVER_NAME}  •  Bewerbungs-System")
         await form_ch.send(embed=emb)
 
-    # --- Ticket ---
+    # ════════════════════════════════════════════════════════════
+    # 5) TICKET
+    # ════════════════════════════════════════════════════════════
     ticket_ch = discord.utils.get(guild.text_channels, name="🎫・ticket")
     if ticket_ch and not [m async for m in ticket_ch.history(limit=1)]:
         emb = discord.Embed(
-            title="🎫 Support-Tickets",
+            title="🎫  SUPPORT-TICKETS  •  FUSE | FS",
             description=(
-                "Du brauchst Hilfe oder möchtest etwas dem Team melden?\n"
-                "Klicke unten auf den Button, um ein **Ticket** zu öffnen.\n\n"
-                "Ein Team-Mitglied wird sich schnellstmöglich melden."
+                f"{LINE}\n"
+                f"### 💬  Brauchst du Hilfe?\n\n"
+                f"Klicke unten auf **🎫 Ticket öffnen**, um privat mit dem Team zu schreiben.\n\n"
+                f"**🛠️  Wofür?**\n"
+                f"➤  Bewerbung & Fragen\n"
+                f"➤  Beschwerden / Reports\n"
+                f"➤  Partnerschaften\n"
+                f"➤  Sonstige Anliegen\n\n"
+                f"**⚠️  Hinweis:** Missbrauch von Tickets wird sanktioniert.\n"
+                f"{LINE}"
             ),
             color=GOLD,
         )
+        emb.set_image(url="https://singlecolorimage.com/get/F1C40F/800x4.png")
+        emb.set_footer(text=f"{SERVER_NAME}  •  Ticket-System")
         await ticket_ch.send(embed=emb, view=TicketView())
 
-    # --- Ankündigung ---
+    # ════════════════════════════════════════════════════════════
+    # 6) ANKÜNDIGUNG
+    # ════════════════════════════════════════════════════════════
     ann_ch = discord.utils.get(guild.text_channels, name="🔔・ankündigung")
     if ann_ch and not [m async for m in ann_ch.history(limit=1)]:
-        emb = discord.Embed(
-            title="🔔 Ankündigungen",
-            description="Hier postet das Team alle wichtigen Ankündigungen rund um **FUSE | FS**.",
-            color=BRAND_COLOR,
+        emb = banner_embed(
+            "🔔  ANKÜNDIGUNGEN",
+            (
+                f"### 📣  Hier postet das Team alle wichtigen News.\n\n"
+                f"➤  Updates & Patches\n"
+                f"➤  Events & Meetings\n"
+                f"➤  Regel-Änderungen\n"
+                f"➤  Server-News\n\n"
+                f"*Schalte die Glocke 🔔 ein, um nichts zu verpassen!*"
+            ),
+            BRAND_COLOR,
         )
         await ann_ch.send(embed=emb)
 
-    # --- Boosts ---
+    # ════════════════════════════════════════════════════════════
+    # 7) BOOSTS
+    # ════════════════════════════════════════════════════════════
     boost_ch = discord.utils.get(guild.text_channels, name="🚀・boosts")
     if boost_ch and not [m async for m in boost_ch.history(limit=1)]:
-        emb = discord.Embed(
-            title="🚀 Server Boosts",
-            description=(
-                "Danke an alle Booster! 💖\n"
-                "Mit einem Boost unterstützt du die Community und erhältst die "
-                "**💖 Booster** Rolle plus Zugang zu exklusiven Lounges."
+        emb = banner_embed(
+            "🚀  SERVER BOOSTS  •  THANK YOU 💖",
+            (
+                f"### 💎  Danke an alle Booster!\n\n"
+                f"Mit einem Boost unterstützt du **{SERVER_NAME}** und bekommst:\n"
+                f"➤  💖 **Booster-Rolle**\n"
+                f"➤  🔒 Zugang zu **Locked-Lounges**\n"
+                f"➤  🎨 Eigene Farbe\n"
+                f"➤  📌 Bevorzugter Support\n\n"
+                f"*Aktuelle Boosts: **{boost_ch.guild.premium_subscription_count or 0}** 🚀*"
             ),
-            color=0xF47FFF,
+            0xF47FFF,
         )
         await boost_ch.send(embed=emb)
 
-    # --- Owner-Chat Hinweis ---
+    # ════════════════════════════════════════════════════════════
+    # 8) CHAT (Community)
+    # ════════════════════════════════════════════════════════════
+    chat_ch = discord.utils.get(guild.text_channels, name="💬・chat")
+    if chat_ch and not [m async for m in chat_ch.history(limit=1)]:
+        emb = banner_embed(
+            "💬  COMMUNITY-CHAT",
+            "Hier kannst du **frei mit anderen Membern quatschen**.\nHalte dich an die Regeln und hab Spaß! 🎉",
+            BRAND_COLOR,
+        )
+        await chat_ch.send(embed=emb)
+
+    # ════════════════════════════════════════════════════════════
+    # 9) PARTNERSCHAFT
+    # ════════════════════════════════════════════════════════════
+    pn_ch = discord.utils.get(guild.text_channels, name="🛡️・partnerschaft")
+    if pn_ch and not [m async for m in pn_ch.history(limit=1)]:
+        emb = banner_embed(
+            "🤝  PARTNERSCHAFT  •  FUSE | FS",
+            (
+                "### 📑 Anforderungen\n"
+                "➤  **min. 50 Member**\n"
+                "➤  aktive Community\n"
+                "➤  keine NSFW / Toxic Server\n\n"
+                "### 📨 Interesse?\n"
+                "Öffne ein **Ticket** und wähle 'Partnerschaft'."
+            ),
+            0x1ABC9C,
+        )
+        await pn_ch.send(embed=emb)
+
+    # ════════════════════════════════════════════════════════════
+    # 10) OWNER-CHAT
+    # ════════════════════════════════════════════════════════════
     owner_ch = discord.utils.get(guild.text_channels, name="👑・owner-chat")
     if owner_ch and not [m async for m in owner_ch.history(limit=1)]:
-        emb = discord.Embed(
-            title="👑 Owner-Chat",
-            description="Privater Channel nur für Owner & Co-Owner.",
-            color=0xFF0000,
+        emb = banner_embed(
+            "👑  OWNER-CHAT",
+            "Privater Kanal **ausschließlich** für Owner & Co-Owner.\nHier werden die wichtigsten Entscheidungen besprochen.",
+            0xFF0000,
         )
         await owner_ch.send(embed=emb)
+
+    # ════════════════════════════════════════════════════════════
+    # 11) ADMIN-CHAT
+    # ════════════════════════════════════════════════════════════
+    admin_ch = discord.utils.get(guild.text_channels, name="⚡・admin-chat")
+    if admin_ch and not [m async for m in admin_ch.history(limit=1)]:
+        emb = banner_embed(
+            "⚡  ADMIN-CHAT",
+            "Privater Kanal für das **Admin-Team**.\nBitte alles Wichtige hier oder im Meeting-Raum besprechen.",
+            0xFF8000,
+        )
+        await admin_ch.send(embed=emb)
 
 
 # --------------------------------------------------------------------------- #
 # VIEWS / BUTTONS
 # --------------------------------------------------------------------------- #
 class SetupView(discord.ui.View):
-    """3-Button-Auswahl beim !start Befehl."""
     def __init__(self, author_id: int):
-        super().__init__(timeout=120)
+        super().__init__(timeout=180)
         self.author_id = author_id
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -685,15 +887,21 @@ class SetupView(discord.ui.View):
 
     @discord.ui.button(label="Abbruch", style=discord.ButtonStyle.danger, emoji="🛑")
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        emb = discord.Embed(title="🛑 Setup abgebrochen", description="Es wurden keine Änderungen vorgenommen.", color=ERROR_COLOR)
+        emb = discord.Embed(
+            title="🛑  Setup abgebrochen",
+            description=f"{LINE}\n*Es wurden keine Änderungen vorgenommen.*\n{LINE}",
+            color=ERROR_COLOR,
+        )
         await interaction.response.edit_message(embed=emb, view=None)
 
     @discord.ui.button(label="Nur Hinzufügen", style=discord.ButtonStyle.primary, emoji="➕")
     async def only_add(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.edit_message(
-            embed=discord.Embed(title="⏳ Setup läuft…",
-                                description="Fehlende Rollen/Kanäle werden hinzugefügt.\nDas kann ein paar Minuten dauern.",
-                                color=INFO_COLOR),
+            embed=discord.Embed(
+                title="⏳  Setup läuft…",
+                description=f"{LINE}\nFehlende Rollen & Kanäle werden hinzugefügt.\nDas kann ein paar Minuten dauern.\n{LINE}",
+                color=INFO_COLOR,
+            ),
             view=None,
         )
         msg = await interaction.original_response()
@@ -701,13 +909,17 @@ class SetupView(discord.ui.View):
 
     @discord.ui.button(label="Komplett neu aufsetzen", style=discord.ButtonStyle.success, emoji="♻️")
     async def fresh(self, interaction: discord.Interaction, button: discord.ui.Button):
-        confirm_view = ConfirmWipeView(self.author_id)
         emb = discord.Embed(
-            title="⚠️ Wirklich KOMPLETT neu aufsetzen?",
-            description="**ALLE Kanäle und Rollen werden gelöscht!**\nDas kann NICHT rückgängig gemacht werden.",
+            title="⚠️  KOMPLETT neu aufsetzen?",
+            description=(
+                f"{LINE}\n"
+                f"**ALLE Kanäle und Rollen werden gelöscht!**\n"
+                f"Dieser Vorgang kann **NICHT** rückgängig gemacht werden.\n"
+                f"{LINE}"
+            ),
             color=ERROR_COLOR,
         )
-        await interaction.response.edit_message(embed=emb, view=confirm_view)
+        await interaction.response.edit_message(embed=emb, view=ConfirmWipeView(self.author_id))
 
 
 class ConfirmWipeView(discord.ui.View):
@@ -721,9 +933,11 @@ class ConfirmWipeView(discord.ui.View):
     @discord.ui.button(label="Ja, alles löschen & neu", style=discord.ButtonStyle.danger, emoji="♻️")
     async def yes(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.edit_message(
-            embed=discord.Embed(title="⏳ Server wird zurückgesetzt…",
-                                description="Alle Kanäle & Rollen werden gelöscht und neu aufgebaut.",
-                                color=INFO_COLOR),
+            embed=discord.Embed(
+                title="⏳  Server wird zurückgesetzt…",
+                description=f"{LINE}\nAlle Kanäle & Rollen werden gelöscht und neu aufgebaut.\n{LINE}",
+                color=INFO_COLOR,
+            ),
             view=None,
         )
         msg = await interaction.original_response()
@@ -732,7 +946,7 @@ class ConfirmWipeView(discord.ui.View):
     @discord.ui.button(label="Abbrechen", style=discord.ButtonStyle.secondary, emoji="✖️")
     async def no(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.edit_message(
-            embed=discord.Embed(title="🛑 Abgebrochen", color=ERROR_COLOR), view=None
+            embed=discord.Embed(title="🛑  Abgebrochen", color=ERROR_COLOR), view=None,
         )
 
 
@@ -748,7 +962,7 @@ class VerifyView(discord.ui.View):
         ver = find_role(guild, KEY_ROLES["verified"])
         bew = find_role(guild, KEY_ROLES["bewerber"])
         if ver and ver in member.roles:
-            return await interaction.response.send_message("✅ Du bist bereits verifiziert!", ephemeral=True)
+            return await interaction.response.send_message("✅  Du bist bereits verifiziert!", ephemeral=True)
         try:
             if unv and unv in member.roles:
                 await member.remove_roles(unv, reason="Verify")
@@ -756,19 +970,32 @@ class VerifyView(discord.ui.View):
                 await member.add_roles(ver, reason="Verify")
             if bew:
                 await member.add_roles(bew, reason="Verify -> Bewerber")
-            await interaction.response.send_message(
-                "✅ **Du wurdest verifiziert!** Du hast nun Zugriff auf den Bewerbungs-Bereich. Viel Glück!",
-                ephemeral=True,
+            emb = discord.Embed(
+                title="🎉  Verifizierung erfolgreich!",
+                description=(
+                    f"{LINE}\n"
+                    f"Willkommen, {member.mention}!\n\n"
+                    f"Du hast nun Zugriff auf den **Bewerbungs-Bereich**.\n"
+                    f"➤  Fülle das **Formular** aus\n"
+                    f"➤  Poste es im **#bewerbungschat**\n"
+                    f"➤  Warte auf die Rückmeldung des Teams\n"
+                    f"{LINE}\n"
+                    f"*Viel Erfolg! 🍀*"
+                ),
+                color=SUCCESS_COLOR,
             )
-            # Log
+            await interaction.response.send_message(embed=emb, ephemeral=True)
+
             log_ch = get_log_channel(guild, "verify")
             if log_ch:
-                emb = discord.Embed(title="✅ User verifiziert", color=SUCCESS_COLOR, timestamp=datetime.utcnow())
-                emb.add_field(name="User", value=f"{member.mention} (`{member.id}`)")
-                emb.set_thumbnail(url=member.display_avatar.url)
-                await log_ch.send(embed=emb)
+                logemb = discord.Embed(title="✅ User verifiziert", color=SUCCESS_COLOR, timestamp=datetime.utcnow())
+                logemb.add_field(name="User", value=f"{member.mention} (`{member.id}`)")
+                logemb.set_thumbnail(url=member.display_avatar.url)
+                await log_ch.send(embed=logemb)
         except discord.Forbidden:
-            await interaction.response.send_message("❌ Mir fehlen die Rechte. Schiebe meine Bot-Rolle ganz nach oben!", ephemeral=True)
+            await interaction.response.send_message(
+                "❌  Mir fehlen die Rechte! Schiebe die **Bot-Rolle** ganz nach oben.", ephemeral=True,
+            )
 
 
 class TicketView(discord.ui.View):
@@ -781,7 +1008,9 @@ class TicketView(discord.ui.View):
         member = interaction.user
         existing = discord.utils.get(guild.text_channels, name=f"ticket-{member.name.lower()}")
         if existing:
-            return await interaction.response.send_message(f"❗ Du hast bereits ein Ticket: {existing.mention}", ephemeral=True)
+            return await interaction.response.send_message(
+                f"❗  Du hast bereits ein Ticket: {existing.mention}", ephemeral=True
+            )
 
         category = find_category(guild, "🌐 ✘ BEWERBUNG")
         ow = {
@@ -799,17 +1028,29 @@ class TicketView(discord.ui.View):
             category=category, overwrites=ow, reason="Ticket geöffnet",
         )
         emb = discord.Embed(
-            title="🎫 Ticket geöffnet",
-            description=f"Hallo {member.mention}, ein Team-Mitglied meldet sich gleich bei dir.\nBeschreibe in der Zwischenzeit dein Anliegen.",
+            title="🎫  Ticket geöffnet",
+            description=(
+                f"{LINE}\n"
+                f"Hallo {member.mention},\n"
+                f"ein Team-Mitglied meldet sich gleich bei dir.\n\n"
+                f"**📝  In der Zwischenzeit:**\n"
+                f"➤  Beschreibe dein Anliegen so genau wie möglich\n"
+                f"➤  Füge Screenshots / Beweise an\n"
+                f"➤  Bleibe geduldig & freundlich\n"
+                f"{LINE}"
+            ),
             color=GOLD,
         )
         await ticket.send(content=member.mention, embed=emb, view=TicketCloseView())
-        await interaction.response.send_message(f"✅ Ticket erstellt: {ticket.mention}", ephemeral=True)
+        await interaction.response.send_message(f"✅  Ticket erstellt: {ticket.mention}", ephemeral=True)
+
         log_ch = get_log_channel(guild, "ticket")
         if log_ch:
-            await log_ch.send(embed=discord.Embed(title="🎫 Ticket geöffnet",
-                                                  description=f"{member.mention} → {ticket.mention}",
-                                                  color=GOLD, timestamp=datetime.utcnow()))
+            await log_ch.send(embed=discord.Embed(
+                title="🎫 Ticket geöffnet",
+                description=f"{member.mention} → {ticket.mention}",
+                color=GOLD, timestamp=datetime.utcnow(),
+            ))
 
 
 class TicketCloseView(discord.ui.View):
@@ -818,47 +1059,38 @@ class TicketCloseView(discord.ui.View):
 
     @discord.ui.button(label="Ticket schließen", style=discord.ButtonStyle.danger, emoji="🔒", custom_id="fuse_ticket_close")
     async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("🔒 Ticket wird in 5 Sekunden geschlossen…")
+        await interaction.response.send_message("🔒  Ticket wird in 5 Sekunden geschlossen…")
         await asyncio.sleep(5)
         try:
             log_ch = get_log_channel(interaction.guild, "ticket")
             if log_ch:
-                await log_ch.send(embed=discord.Embed(title="🔒 Ticket geschlossen",
-                                                      description=f"Channel: `{interaction.channel.name}` von {interaction.user.mention}",
-                                                      color=ERROR_COLOR, timestamp=datetime.utcnow()))
+                await log_ch.send(embed=discord.Embed(
+                    title="🔒 Ticket geschlossen",
+                    description=f"Channel: `{interaction.channel.name}` von {interaction.user.mention}",
+                    color=ERROR_COLOR, timestamp=datetime.utcnow(),
+                ))
             await interaction.channel.delete(reason="Ticket geschlossen")
         except Exception:
             pass
 
 
 # --------------------------------------------------------------------------- #
-# SETUP RUNNER
+# SETUP RUNNER (mit safe-edit)
 # --------------------------------------------------------------------------- #
 async def safe_edit(status_msg: Optional[discord.Message], **kwargs) -> Optional[discord.Message]:
-    """
-    Versucht eine Status-Nachricht zu bearbeiten. Wenn das Original
-    nicht mehr existiert (z.B. Kanal wurde gelöscht beim Wipe, oder
-    Interaction-Token abgelaufen), wird der Fehler still verschluckt.
-    """
-    if status_msg is None:
-        return None
+    if status_msg is None: return None
     try:
         await status_msg.edit(**kwargs)
         return status_msg
     except (discord.NotFound, discord.Forbidden, discord.HTTPException) as e:
-        log.warning("Status-Nachricht konnte nicht editiert werden: %s", e)
+        log.warning("Status-Edit fehlgeschlagen: %s", e)
         return None
     except Exception as e:
-        log.warning("Unerwarteter Fehler beim Status-Update: %s", e)
+        log.warning("Unerwarteter Status-Edit Fehler: %s", e)
         return None
 
 
 async def post_status(guild: discord.Guild, embed: discord.Embed) -> Optional[discord.Message]:
-    """
-    Postet eine neue Status-Nachricht in einem geeigneten Kanal,
-    falls die alte verloren ging (z.B. nach Wipe).
-    """
-    # Bevorzugter Kanal: System-Channel, dann erster beschreibbarer Text-Kanal
     candidates = []
     if guild.system_channel:
         candidates.append(guild.system_channel)
@@ -876,59 +1108,57 @@ async def post_status(guild: discord.Guild, embed: discord.Embed) -> Optional[di
 async def run_setup(guild: discord.Guild, status_msg: Optional[discord.Message], wipe: bool) -> None:
     try:
         if wipe:
-            await safe_edit(status_msg, embed=discord.Embed(title="🧹 Lösche alte Struktur…", color=INFO_COLOR))
+            await safe_edit(status_msg, embed=discord.Embed(title="🧹  Lösche alte Struktur…", color=INFO_COLOR))
             await wipe_server(guild)
-            # Nach dem Wipe ist die Status-Nachricht zu 99% weg -> wir verlieren sie hier bewusst.
-            status_msg = None
+            status_msg = None  # alles weg
 
-        status_msg = await safe_edit(status_msg, embed=discord.Embed(title="🎭 Erstelle Rollen…", color=INFO_COLOR)) or status_msg
-        await create_roles(guild, status_msg)
+        status_msg = await safe_edit(
+            status_msg, embed=discord.Embed(title="🎭  Erstelle Rollen…", color=INFO_COLOR)
+        ) or status_msg
+        await create_roles(guild)
 
-        # Falls keine Status-Nachricht mehr existiert (z.B. nach Wipe): neue posten,
-        # jetzt haben wir wieder Kanäle.
         if status_msg is None:
             status_msg = await post_status(
-                guild,
-                discord.Embed(title="📁 Erstelle Kategorien & Kanäle…", color=INFO_COLOR),
+                guild, discord.Embed(title="📁  Erstelle Kategorien & Kanäle…", color=INFO_COLOR),
             )
         else:
             status_msg = await safe_edit(
-                status_msg,
-                embed=discord.Embed(title="📁 Erstelle Kategorien & Kanäle…", color=INFO_COLOR),
+                status_msg, embed=discord.Embed(title="📁  Erstelle Kategorien & Kanäle…", color=INFO_COLOR),
             ) or status_msg
 
         await create_structure(guild)
 
+        # Hierarchie nochmal erzwingen (falls neue Rollen entstanden sind)
+        await enforce_role_hierarchy(guild)
+
         status_msg = await safe_edit(
-            status_msg,
-            embed=discord.Embed(title="💬 Befülle wichtige Kanäle…", color=INFO_COLOR),
+            status_msg, embed=discord.Embed(title="💬  Befülle wichtige Kanäle…", color=INFO_COLOR),
         ) or status_msg
         await fill_channels(guild)
 
         done = discord.Embed(
-            title="✅ Setup abgeschlossen!",
+            title="✅  Setup abgeschlossen!",
             description=(
+                f"{LINE}\n"
                 f"**{SERVER_NAME}** wurde komplett eingerichtet.\n\n"
-                f"• 🎭 Rollen: **{len(ROLES)}**\n"
-                f"• 📁 Kategorien: **{len(STRUCTURE)}**\n"
-                f"• 💬 Kanäle: **{sum(len(c['channels']) for c in STRUCTURE)}**\n\n"
-                "Vergiss nicht, die **Bot-Rolle** ganz oben in der Rollen-Liste zu lassen!"
+                f"➤  🎭  Rollen:      **{len(ROLES)}**\n"
+                f"➤  📁  Kategorien:  **{len(STRUCTURE)}**\n"
+                f"➤  💬  Kanäle:      **{sum(len(c['channels']) for c in STRUCTURE)}**\n\n"
+                f"⚠️  *Vergiss nicht, die **Bot-Rolle** ganz oben in der Rollen-Liste zu lassen!*\n"
+                f"{LINE}"
             ),
             color=SUCCESS_COLOR,
         )
-        edited = await safe_edit(status_msg, embed=done)
-        if edited is None:
-            # Falls die Status-Nachricht weg ist, finale Nachricht neu posten
+        if (await safe_edit(status_msg, embed=done)) is None:
             await post_status(guild, done)
     except Exception as e:
         log.exception("Setup-Fehler")
         err = discord.Embed(
-            title="❌ Fehler beim Setup",
+            title="❌  Fehler beim Setup",
             description=f"```{type(e).__name__}: {e}```",
             color=ERROR_COLOR,
         )
-        edited = await safe_edit(status_msg, embed=err)
-        if edited is None:
+        if (await safe_edit(status_msg, embed=err)) is None:
             await post_status(guild, err)
 
 
@@ -938,48 +1168,66 @@ async def run_setup(guild: discord.Guild, status_msg: Optional[discord.Message],
 @bot.event
 async def on_ready():
     log.info("Eingeloggt als %s (ID: %s)", bot.user, bot.user.id)
-    # Persistent Views registrieren
     bot.add_view(VerifyView())
     bot.add_view(TicketView())
     bot.add_view(TicketCloseView())
-    await bot.change_presence(activity=discord.Game(name=f"{PREFIX}start | {SERVER_NAME}"))
+    await bot.change_presence(activity=discord.Game(name=f"{PREFIX}start  •  {SERVER_NAME}"))
 
 
 @bot.command(name="start")
 @commands.has_permissions(administrator=True)
 async def start_cmd(ctx: commands.Context):
-    """Setup-Wizard."""
     emb = discord.Embed(
-        title=f"⚙️ {SERVER_NAME} – Setup Wizard",
+        title=f"⚙️  {SERVER_NAME}  •  SETUP WIZARD",
         description=(
-            "Wähle eine Option, um den Server einzurichten:\n\n"
-            "🛑 **Abbruch** – nichts tun.\n"
-            "➕ **Nur Hinzufügen** – fehlende Rollen & Kanäle ergänzen, bestehendes bleibt.\n"
-            "♻️ **Komplett neu aufsetzen** – **ALLES** löschen und neu erstellen.\n\n"
-            "*Stelle sicher, dass die Bot-Rolle ganz oben in der Hierarchie steht "
-            "und der Bot Administrator-Rechte hat.*"
+            f"{LINE}\n"
+            f"### 💎  Willkommen zum Server-Setup!\n\n"
+            f"Wähle eine der folgenden Optionen:\n\n"
+            f"🛑  **Abbruch**\n"
+            f"> Nichts tun, Wizard schließen.\n\n"
+            f"➕  **Nur Hinzufügen**\n"
+            f"> Fehlende Rollen & Kanäle ergänzen — Bestehendes bleibt.\n\n"
+            f"♻️  **Komplett neu aufsetzen**\n"
+            f"> **ALLES** löschen & sauber neu erstellen *(mit Sicherheitsfrage)*.\n"
+            f"{LINE}\n"
+            f"⚠️  *Stelle sicher: **Bot-Rolle ganz oben** + **Admin-Rechte**.*"
         ),
         color=BRAND_COLOR,
     )
-    emb.set_footer(text="FUSE | FS Setup • nur Admins")
+    emb.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else FUSE_ICON)
+    emb.set_image(url="https://singlecolorimage.com/get/E91E63/800x4.png")
+    emb.set_footer(text=f"{SERVER_NAME}  •  Setup  •  nur Admins")
     await ctx.send(embed=emb, view=SetupView(ctx.author.id))
 
 
 @start_cmd.error
 async def start_err(ctx, error):
     if isinstance(error, commands.MissingPermissions):
-        await ctx.send(embed=discord.Embed(title="❌ Keine Berechtigung",
-                                            description="Du brauchst **Administrator** für diesen Befehl.",
-                                            color=ERROR_COLOR))
+        await ctx.send(embed=discord.Embed(
+            title="❌  Keine Berechtigung",
+            description="Du brauchst **Administrator** für diesen Befehl.",
+            color=ERROR_COLOR,
+        ))
+
+
+@bot.command(name="fix-hierarchie")
+@commands.has_permissions(administrator=True)
+async def fix_hierarchy(ctx):
+    """Erzwingt die Rollen-Reihenfolge (Owner ganz oben)."""
+    await enforce_role_hierarchy(ctx.guild)
+    await ctx.send(embed=discord.Embed(
+        title="✅  Hierarchie aktualisiert",
+        description=f"{LINE}\nDie Rollen wurden in die richtige Reihenfolge gebracht.\n{LINE}",
+        color=SUCCESS_COLOR,
+    ))
 
 
 @bot.command(name="resend-verify")
 @commands.has_permissions(administrator=True)
 async def resend_verify(ctx):
-    """Sendet den Verify-Button erneut im aktuellen Kanal."""
     emb = discord.Embed(
-        title="✅ Verifizierung",
-        description="Klicke auf den Button, um dich zu verifizieren.",
+        title="🔐  VERIFIZIERUNG  •  FUSE | FS",
+        description=f"{LINE}\nKlicke unten, um dich zu verifizieren.\n{LINE}",
         color=SUCCESS_COLOR,
     )
     await ctx.send(embed=emb, view=VerifyView())
@@ -991,36 +1239,39 @@ async def resend_verify(ctx):
 @bot.event
 async def on_member_join(member: discord.Member):
     guild = member.guild
-    # Unverified Rolle
     unv = find_role(guild, KEY_ROLES["unverified"])
     if unv:
         try: await member.add_roles(unv, reason="Auto: Unverified")
         except Exception: pass
 
-    # Welcome-Nachricht
     wc = discord.utils.get(guild.text_channels, name="👋・willkommen")
+    rules = discord.utils.get(guild.text_channels, name="📜・regelwerk")
+    verify = discord.utils.get(guild.text_channels, name="✅・verify")
     if wc:
         emb = discord.Embed(
-            title=f"**WILLKOMMEN IN {SERVER_NAME} !**",
+            title=f"🎉  WILLKOMMEN IN {SERVER_NAME.upper()}!",
             description=(
-                f"Hey {member.mention}! Willkommen bei **Fuse**!\n"
-                f"Du bist unser **{guild.member_count}.** Member.\n\n"
-                f"Bitte halte dich an die <#{discord.utils.get(guild.text_channels, name='📜・regelwerk').id if discord.utils.get(guild.text_channels, name='📜・regelwerk') else 0}> "
-                f"und geh freundlich mit allen Mitgliedern um.\n\n"
-                f"➡️ Verifiziere dich im Kanal **#verify** um loszulegen!"
+                f"{LINE}\n"
+                f"Hey {member.mention}!  Willkommen bei **{SERVER_NAME}**! 💎\n"
+                f"Du bist unser **{guild.member_count}. Member**.\n\n"
+                f"📜  Lies dir die {rules.mention if rules else '#regelwerk'} durch.\n"
+                f"✅  Verifiziere dich im {verify.mention if verify else '#verify'}.\n"
+                f"🎮  Anschließend kannst du dich bewerben.\n\n"
+                f"*Bitte halte dich an die Regeln und geh freundlich mit allen Mitgliedern um.*\n"
+                f"{LINE}"
             ),
             color=BRAND_COLOR,
             timestamp=datetime.utcnow(),
         )
         emb.set_thumbnail(url=member.display_avatar.url)
-        emb.set_footer(text=f"User-ID: {member.id}")
+        emb.set_image(url="https://singlecolorimage.com/get/E91E63/800x4.png")
+        emb.set_footer(text=f"User-ID: {member.id}  •  Account erstellt", icon_url=guild.icon.url if guild.icon else FUSE_ICON)
         await wc.send(content=member.mention, embed=emb)
 
-    # Log
     log_ch = get_log_channel(guild, "join")
     if log_ch:
-        emb = discord.Embed(title="📥 Member Joined", color=SUCCESS_COLOR, timestamp=datetime.utcnow())
-        emb.add_field(name="User", value=f"{member.mention} (`{member.id}`)")
+        emb = discord.Embed(title="📥  Member Joined", color=SUCCESS_COLOR, timestamp=datetime.utcnow())
+        emb.add_field(name="User", value=f"{member.mention} (`{member.id}`)", inline=False)
         emb.add_field(name="Account erstellt", value=f"<t:{int(member.created_at.timestamp())}:R>")
         emb.add_field(name="Member-Count", value=f"**{guild.member_count}**")
         emb.set_thumbnail(url=member.display_avatar.url)
@@ -1033,15 +1284,20 @@ async def on_member_remove(member: discord.Member):
     bye = discord.utils.get(guild.text_channels, name="👋・tschüss")
     if bye:
         emb = discord.Embed(
-            title="👋 Tschüss!",
-            description=f"**{member}** hat den Server verlassen.\nWir sind jetzt **{guild.member_count}** Member.",
+            title="👋  TSCHÜSS!",
+            description=(
+                f"{LINE}\n"
+                f"**{member}** hat den Server verlassen.\n"
+                f"Wir sind jetzt **{guild.member_count}** Member.\n"
+                f"{LINE}"
+            ),
             color=ERROR_COLOR, timestamp=datetime.utcnow(),
         )
         emb.set_thumbnail(url=member.display_avatar.url)
         await bye.send(embed=emb)
     log_ch = get_log_channel(guild, "leave")
     if log_ch:
-        emb = discord.Embed(title="📤 Member Left", color=ERROR_COLOR, timestamp=datetime.utcnow())
+        emb = discord.Embed(title="📤  Member Left", color=ERROR_COLOR, timestamp=datetime.utcnow())
         emb.add_field(name="User", value=f"{member} (`{member.id}`)")
         emb.set_thumbnail(url=member.display_avatar.url)
         await log_ch.send(embed=emb)
@@ -1052,7 +1308,7 @@ async def on_message_delete(message: discord.Message):
     if message.author.bot or not message.guild: return
     log_ch = get_log_channel(message.guild, "message")
     if not log_ch: return
-    emb = discord.Embed(title="🗑️ Nachricht gelöscht", color=ERROR_COLOR, timestamp=datetime.utcnow())
+    emb = discord.Embed(title="🗑️  Nachricht gelöscht", color=ERROR_COLOR, timestamp=datetime.utcnow())
     emb.add_field(name="Autor", value=message.author.mention, inline=True)
     emb.add_field(name="Kanal", value=message.channel.mention, inline=True)
     emb.add_field(name="Inhalt", value=(message.content[:1000] or "*kein Text*"), inline=False)
@@ -1064,8 +1320,7 @@ async def on_message_edit(before: discord.Message, after: discord.Message):
     if before.author.bot or not before.guild or before.content == after.content: return
     log_ch = get_log_channel(before.guild, "message")
     if not log_ch: return
-    emb = discord.Embed(title="✏️ Nachricht bearbeitet", color=GOLD, timestamp=datetime.utcnow(),
-                        url=after.jump_url)
+    emb = discord.Embed(title="✏️  Nachricht bearbeitet", color=GOLD, timestamp=datetime.utcnow(), url=after.jump_url)
     emb.add_field(name="Autor", value=before.author.mention, inline=True)
     emb.add_field(name="Kanal", value=before.channel.mention, inline=True)
     emb.add_field(name="Vorher", value=(before.content[:500] or "*leer*"), inline=False)
@@ -1079,11 +1334,11 @@ async def on_voice_state_update(member: discord.Member, before, after):
     if not log_ch: return
     if before.channel != after.channel:
         if after.channel and not before.channel:
-            txt, col = f"🎙️ **{member}** ist **{after.channel.name}** beigetreten.", SUCCESS_COLOR
+            txt, col = f"🎙️  **{member}** → **{after.channel.name}**", SUCCESS_COLOR
         elif before.channel and not after.channel:
-            txt, col = f"🔇 **{member}** hat **{before.channel.name}** verlassen.", ERROR_COLOR
+            txt, col = f"🔇  **{member}** verließ **{before.channel.name}**", ERROR_COLOR
         else:
-            txt, col = f"🔄 **{member}**: `{before.channel.name}` → `{after.channel.name}`", INFO_COLOR
+            txt, col = f"🔄  **{member}**: `{before.channel.name}` → `{after.channel.name}`", INFO_COLOR
         await log_ch.send(embed=discord.Embed(description=txt, color=col, timestamp=datetime.utcnow()))
 
 
@@ -1092,9 +1347,9 @@ async def on_member_update(before: discord.Member, after: discord.Member):
     if before.roles == after.roles: return
     log_ch = get_log_channel(before.guild, "role")
     if not log_ch: return
-    added   = [r for r in after.roles if r not in before.roles]
+    added   = [r for r in after.roles  if r not in before.roles]
     removed = [r for r in before.roles if r not in after.roles]
-    emb = discord.Embed(title="🎭 Rollen geändert", color=INFO_COLOR, timestamp=datetime.utcnow())
+    emb = discord.Embed(title="🎭  Rollen geändert", color=INFO_COLOR, timestamp=datetime.utcnow())
     emb.add_field(name="User", value=after.mention, inline=False)
     if added:   emb.add_field(name="➕ Hinzugefügt", value=", ".join(r.mention for r in added), inline=False)
     if removed: emb.add_field(name="➖ Entfernt",    value=", ".join(r.mention for r in removed), inline=False)
@@ -1105,54 +1360,66 @@ async def on_member_update(before: discord.Member, after: discord.Member):
 async def on_guild_channel_create(channel):
     log_ch = get_log_channel(channel.guild, "channel")
     if log_ch:
-        await log_ch.send(embed=discord.Embed(title="📁 Kanal erstellt",
-                                              description=f"{channel.mention} (`{channel.name}`)",
-                                              color=SUCCESS_COLOR, timestamp=datetime.utcnow()))
+        await log_ch.send(embed=discord.Embed(
+            title="📁  Kanal erstellt",
+            description=f"{channel.mention} (`{channel.name}`)",
+            color=SUCCESS_COLOR, timestamp=datetime.utcnow(),
+        ))
 
 
 @bot.event
 async def on_guild_channel_delete(channel):
     log_ch = get_log_channel(channel.guild, "channel")
     if log_ch:
-        await log_ch.send(embed=discord.Embed(title="📁 Kanal gelöscht",
-                                              description=f"`{channel.name}`",
-                                              color=ERROR_COLOR, timestamp=datetime.utcnow()))
+        await log_ch.send(embed=discord.Embed(
+            title="📁  Kanal gelöscht",
+            description=f"`{channel.name}`",
+            color=ERROR_COLOR, timestamp=datetime.utcnow(),
+        ))
 
 
 @bot.event
 async def on_guild_role_create(role):
     log_ch = get_log_channel(role.guild, "server")
     if log_ch:
-        await log_ch.send(embed=discord.Embed(title="🎭 Rolle erstellt",
-                                              description=f"{role.mention} (`{role.name}`)",
-                                              color=SUCCESS_COLOR, timestamp=datetime.utcnow()))
+        await log_ch.send(embed=discord.Embed(
+            title="🎭  Rolle erstellt",
+            description=f"{role.mention} (`{role.name}`)",
+            color=SUCCESS_COLOR, timestamp=datetime.utcnow(),
+        ))
 
 
 @bot.event
 async def on_guild_role_delete(role):
     log_ch = get_log_channel(role.guild, "server")
     if log_ch:
-        await log_ch.send(embed=discord.Embed(title="🎭 Rolle gelöscht",
-                                              description=f"`{role.name}`",
-                                              color=ERROR_COLOR, timestamp=datetime.utcnow()))
+        await log_ch.send(embed=discord.Embed(
+            title="🎭  Rolle gelöscht",
+            description=f"`{role.name}`",
+            color=ERROR_COLOR, timestamp=datetime.utcnow(),
+        ))
 
 
 @bot.event
 async def on_member_ban(guild, user):
     log_ch = get_log_channel(guild, "moderation")
     if log_ch:
-        await log_ch.send(embed=discord.Embed(title="🔨 Member gebannt",
-                                              description=f"**{user}** (`{user.id}`)",
-                                              color=ERROR_COLOR, timestamp=datetime.utcnow()))
+        await log_ch.send(embed=discord.Embed(
+            title="🔨  Member gebannt",
+            description=f"**{user}** (`{user.id}`)",
+            color=ERROR_COLOR, timestamp=datetime.utcnow(),
+        ))
 
 
 @bot.event
 async def on_member_unban(guild, user):
     log_ch = get_log_channel(guild, "moderation")
     if log_ch:
-        await log_ch.send(embed=discord.Embed(title="🕊️ Member entbannt",
-                                              description=f"**{user}** (`{user.id}`)",
-                                              color=SUCCESS_COLOR, timestamp=datetime.utcnow()))
+        await log_ch.send(embed=discord.Embed(
+            title="🕊️  Member entbannt",
+            description=f"**{user}** (`{user.id}`)",
+            color=SUCCESS_COLOR, timestamp=datetime.utcnow(),
+        ))
 
 
 # --------------------------------------------------------------------------- #
@@ -1160,5 +1427,5 @@ async def on_member_unban(guild, user):
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
     if not TOKEN:
-        raise SystemExit("❌ DISCORD_TOKEN fehlt! Lege ihn in den Railway-Variablen an.")
+        raise SystemExit("❌  DISCORD_TOKEN fehlt! Setze ihn in den Railway-Variablen.")
     bot.run(TOKEN)
