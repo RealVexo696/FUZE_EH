@@ -1,0 +1,8 @@
+[railway]
+projectId = "your-project-id"
+environment = "production"
+startCommand = "python bot.py"
+builder = "python"
+
+[railway.variables]
+DISCORD_BOT_TOKEN = { fromEnv = "DISCORD_BOT_TOKEN" }
