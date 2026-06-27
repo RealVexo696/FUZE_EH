@@ -1,0 +1,14 @@
+{
+    "token": "DEIN_BOT_TOKEN_HIER",
+    "guild_name": "FUSE | Crime Hamburg",
+    "welcome_channel_name": "willkommen",
+    "verify_channel_name": "verify",
+    "log_channel_name": "logs",
+    "ticket_category_name": "Tickets",
+    "admin_role_name": "Admin",
+    "owner_role_name": "Owner",
+    "verified_role_name": "Member",
+    "unverified_role_name": "Unverified",
+    "embed_color": 16711680,
+    "embed_footer": "FUSE | Crime Hamburg"
+}
