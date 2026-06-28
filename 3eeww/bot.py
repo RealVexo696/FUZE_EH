@@ -539,87 +539,69 @@ async def _safe_call(coro_factory, *, retries: int = 6, label: str = ""):
             if e.status == 429:
                 retry_after = float(getattr(e, "retry_after", 0)
                                     or (e.response.headers.get("Retry-After") if e.response else 0)
-                                    or 5)
-                wait = min(retry_after + 0.5, 60)
+                                    or 2)
+                wait = min(retry_after + 0.2, 30)
                 log.warning("[%s] Rate-Limited – warte %.1fs (Versuch %d/%d)", label, wait, attempt, retries)
                 await asyncio.sleep(wait)
                 continue
-            # 50013 = Missing Permissions (Bot hat nicht genug Rechte für diese Rolle/Permission)
             if e.code == 50013:
                 log.warning("[%s] Missing Permissions: %s", label, e)
                 return None
-            # 5xx → kurz warten und nochmal probieren
             if 500 <= (e.status or 0) < 600 and attempt < retries:
-                log.warning("[%s] Server-Fehler %s – retry in 3s", label, e.status)
-                await asyncio.sleep(3)
+                await asyncio.sleep(1.5)
                 continue
             log.warning("[%s] HTTPException %s: %s", label, e.status, e)
             return None
         except Exception as e:
             log.warning("[%s] Unerwarteter Fehler: %s", label, e)
             return None
-    log.warning("[%s] Aufgegeben nach %d Versuchen.", label, retries)
     return None
 
 
 def _sanitize_perms(g: discord.Guild, perms: discord.Permissions) -> discord.Permissions:
-    """
-    Beschneidet Permissions so, dass der Bot sie auch tatsächlich vergeben darf.
-    Discord erlaubt Bots nur Permissions zu vergeben, die sie selbst besitzen.
-    Ohne diesen Fix bricht create_role bei Admin-Rollen mit 50013 ab.
-    """
-    bot_perms_value = g.me.guild_permissions.value
-    return discord.Permissions(perms.value & bot_perms_value)
+    """Beschneidet Permissions auf das, was der Bot vergeben darf."""
+    return discord.Permissions(perms.value & g.me.guild_permissions.value)
 
 
 async def create_roles(g: discord.Guild) -> None:
-    """Erstellt alle fehlenden Rollen — robust gegen Rate-Limits & Permission-Fehler."""
-    created = 0
-    skipped = 0
-    failed  = 0
-    total   = len(ROLES)
+    """Erstellt alle Rollen PARALLEL (in Batches) — extrem schnell."""
     bot_has_admin = g.me.guild_permissions.administrator
+    to_create = [r for r in reversed(ROLES) if not find_role(g, r["name"])]
+    total = len(to_create)
+    log.info("Erstelle %d Rollen parallel (Bot-Admin: %s)", total, bot_has_admin)
 
-    log.info("Starte Rollen-Erstellung (%d Rollen, Bot-Admin: %s)", total, bot_has_admin)
+    if not to_create:
+        await enforce_role_hierarchy(g)
+        return
 
-    # Umgekehrt durch die Liste (unten → oben)
-    for idx, role_def in enumerate(reversed(ROLES), start=1):
-        name = role_def["name"]
-        if find_role(g, name):
-            skipped += 1
-            continue
+    sem = asyncio.Semaphore(5)  # 5 gleichzeitige Calls
+    counter = {"done": 0}
 
-        # Permissions an Bot-Rechte anpassen — sonst 50013-Fehler bei Admin-Rollen
-        perms = role_def["perms"] if bot_has_admin else _sanitize_perms(g, role_def["perms"])
+    async def make_role(role_def):
+        async with sem:
+            name = role_def["name"]
+            perms = role_def["perms"] if bot_has_admin else _sanitize_perms(g, role_def["perms"])
+            r = await _safe_call(
+                lambda: g.create_role(
+                    name=name, color=discord.Color(role_def["color"]),
+                    hoist=role_def["hoist"], permissions=perms,
+                    mentionable=False, reason="FUSE Setup",
+                ),
+                label=f"role {name}",
+            )
+            counter["done"] += 1
+            if r is not None:
+                log.info("  ✓ (%d/%d) Rolle '%s'", counter["done"], total, name)
+            else:
+                log.warning("  ✗ (%d/%d) Rolle '%s'", counter["done"], total, name)
+            return r
 
-        result = await _safe_call(
-            lambda: g.create_role(
-                name=name,
-                color=discord.Color(role_def["color"]),
-                hoist=role_def["hoist"],
-                permissions=perms,
-                mentionable=False,
-                reason="FUSE Setup",
-            ),
-            label=f"create_role[{idx}/{total}] {name}",
-        )
-
-        if result is not None:
-            created += 1
-            log.info("  ✓ (%d/%d) Rolle '%s' erstellt", idx, total, name)
-        else:
-            failed += 1
-            log.warning("  ✗ (%d/%d) Rolle '%s' nicht erstellt", idx, total, name)
-
-        # Sanfte Pause, damit wir das Rollen-Rate-Limit nicht reißen
-        await asyncio.sleep(0.8)
-
-    log.info("Rollen fertig — erstellt: %d, vorhanden: %d, fehlgeschlagen: %d", created, skipped, failed)
+    await asyncio.gather(*(make_role(rd) for rd in to_create))
+    log.info("Rollen fertig (%d)", total)
     await enforce_role_hierarchy(g)
 
 
 async def enforce_role_hierarchy(g: discord.Guild) -> None:
-    """Setzt die Rollen-Reihenfolge — robust mit Retry."""
     try:
         bot_top = g.me.top_role
         positions = {}
@@ -631,41 +613,24 @@ async def enforce_role_hierarchy(g: discord.Guild) -> None:
         if positions:
             await _safe_call(
                 lambda: g.edit_role_positions(positions=positions, reason="FUSE Hierarchie"),
-                label="edit_role_positions",
+                label="role_positions",
             )
-            log.info("Rollen-Hierarchie gesetzt (%d Rollen)", len(positions))
+            log.info("Rollen-Hierarchie gesetzt (%d)", len(positions))
     except Exception as e:
         log.warning("Hierarchie nicht setzbar: %s", e)
 
 
 async def create_structure(g: discord.Guild) -> None:
+    """Erstellt Kategorien sequentiell (für Reihenfolge), Kanäle PARALLEL pro Kategorie."""
     total_cats = len(STRUCTURE)
     total_chs  = sum(len(c["channels"]) for c in STRUCTURE)
-    log.info("Starte Struktur — %d Kategorien, %d Kanäle", total_cats, total_chs)
+    log.info("Erstelle %d Kategorien + %d Kanäle parallel", total_cats, total_chs)
 
-    cat_i = 0
-    ch_i  = 0
-    for cat_def in STRUCTURE:
-        cat_i += 1
-        cat_name = cat_def["category"]
-        cat_vis  = cat_def["visibility"]
-        cat_ow   = build_overwrites(g, cat_vis)
-        category = find_category(g, cat_name)
+    sem = asyncio.Semaphore(8)  # 8 gleichzeitige Channel-Calls
+    counter = {"done": 0}
 
-        if not category:
-            category = await _safe_call(
-                lambda: g.create_category(cat_name, overwrites=cat_ow, reason="FUSE Setup"),
-                label=f"create_category[{cat_i}/{total_cats}] {cat_name}",
-            )
-            if category is None:
-                log.warning("Kategorie übersprungen: %s", cat_name)
-                continue
-            await asyncio.sleep(0.6)
-        else:
-            await _safe_call(lambda: category.edit(overwrites=cat_ow), label=f"edit_category {cat_name}")
-
-        for ch_def in cat_def["channels"]:
-            ch_i += 1
+    async def make_channel(g, category, ch_def, cat_vis):
+        async with sem:
             ch_name = ch_def["name"]
             ctype   = ch_def.get("type", "text")
             ch_vis  = ch_def.get("visibility", cat_vis)
@@ -675,9 +640,10 @@ async def create_structure(g: discord.Guild) -> None:
             if existing:
                 await _safe_call(
                     lambda: existing.edit(overwrites=build_overwrites(g, ch_vis, locked=locked)),
-                    label=f"edit_channel {ch_name}",
+                    label=f"edit {ch_name}",
                 )
-                continue
+                counter["done"] += 1
+                return
 
             chan_ow = build_overwrites(g, ch_vis, locked=locked)
             if ctype == "text":
@@ -690,28 +656,53 @@ async def create_structure(g: discord.Guild) -> None:
                 else:
                     factory = lambda: g.create_voice_channel(ch_name, category=category, overwrites=chan_ow, reason="FUSE Setup")
             else:
-                continue
+                return
 
-            r = await _safe_call(factory, label=f"create_channel[{ch_i}/{total_chs}] {ch_name}")
+            r = await _safe_call(factory, label=f"channel {ch_name}")
+            counter["done"] += 1
             if r is not None:
-                log.info("  ✓ Kanal (%d/%d) '%s'", ch_i, total_chs, ch_name)
-            else:
-                log.warning("  ✗ Kanal (%d/%d) '%s' fehlgeschlagen", ch_i, total_chs, ch_name)
-            await asyncio.sleep(0.6)
+                log.info("  ✓ (%d/%d) Kanal '%s'", counter["done"], total_chs, ch_name)
 
+    # Kategorien parallel erstellen, dann ihre Kanäle parallel
+    async def make_category_with_channels(cat_def):
+        cat_name = cat_def["category"]
+        cat_vis  = cat_def["visibility"]
+        cat_ow   = build_overwrites(g, cat_vis)
+        category = find_category(g, cat_name)
+        if not category:
+            category = await _safe_call(
+                lambda: g.create_category(cat_name, overwrites=cat_ow, reason="FUSE Setup"),
+                label=f"category {cat_name}",
+            )
+            if category is None:
+                log.warning("Kategorie übersprungen: %s", cat_name)
+                return
+        else:
+            await _safe_call(lambda: category.edit(overwrites=cat_ow), label=f"edit_cat {cat_name}")
+
+        # Alle Kanäle dieser Kategorie parallel
+        await asyncio.gather(*(make_channel(g, category, ch, cat_vis) for ch in cat_def["channels"]))
+
+    # Alle Kategorien parallel
+    await asyncio.gather(*(make_category_with_channels(cd) for cd in STRUCTURE))
     log.info("Struktur fertig.")
 
 
 async def wipe_server(g: discord.Guild) -> None:
-    log.info("Starte Wipe…")
-    for ch in list(g.channels):
-        await _safe_call(lambda: ch.delete(reason="FUSE Reset"), label=f"delete_channel {ch.name}")
-        await asyncio.sleep(0.4)
-    for r in list(g.roles):
-        if r.is_default() or r.managed or r >= g.me.top_role:
-            continue
-        await _safe_call(lambda: r.delete(reason="FUSE Reset"), label=f"delete_role {r.name}")
-        await asyncio.sleep(0.4)
+    """Löscht parallel — viel schneller."""
+    log.info("Wipe startet (%d Kanäle, %d Rollen)", len(g.channels), len(g.roles))
+
+    sem = asyncio.Semaphore(10)
+    async def del_one(obj, label):
+        async with sem:
+            await _safe_call(lambda: obj.delete(reason="FUSE Reset"), label=label)
+
+    # Kanäle parallel löschen
+    await asyncio.gather(*(del_one(ch, f"del ch {ch.name}") for ch in list(g.channels)))
+
+    # Rollen parallel löschen
+    roles_to_del = [r for r in g.roles if not r.is_default() and not r.managed and r < g.me.top_role]
+    await asyncio.gather(*(del_one(r, f"del role {r.name}") for r in roles_to_del))
     log.info("Wipe abgeschlossen.")
 
 
