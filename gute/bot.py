@@ -97,17 +97,118 @@ def clear_cooldown(user_id: int) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────── #
-# EINHEITLICHE EMBEDS — jetzt aus utils.py (Premium Engine v2)
+# EINHEITLICHE EMBEDS — aus utils.py (Premium Engine v2)
+# Mit Fallback falls utils.py veraltet ist
 # ─────────────────────────────────────────────────────────────────── #
-from utils import (
-    fuse_embed, banner_embed, success_embed, error_embed, info_embed,
-    quote, big_quote, section, kv,
-    DIVIDER, SOFT_DIVIDER, DOTS, SECTION, INVISIBLE,
-    BULLET_ARROW, BULLET_DIAMOND, BULLET_STAR, BULLET_DOT, BULLET_GEM,
-    color_bar, color_banner,
-)
+try:
+    from utils import (
+        fuse_embed, banner_embed, success_embed, error_embed, info_embed,
+        quote, big_quote, section, kv,
+        DIVIDER, SOFT_DIVIDER, DOTS, SECTION, INVISIBLE,
+        BULLET_ARROW, BULLET_DIAMOND, BULLET_STAR, BULLET_DOT, BULLET_GEM,
+        color_bar, color_banner,
+    )
+except ImportError as _e:
+    # Fallback: alles inline definieren wenn utils.py veraltet/fehlt
+    print(f"[WARN] utils.py incomplete ({_e}) — using inline fallback")
 
-LINE = DIVIDER  # Backwards-Compat für alte Aufrufe
+    DIVIDER       = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    SOFT_DIVIDER  = "▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱"
+    DOTS          = "✦ ✧ ✦ ✧ ✦ ✧ ✦ ✧ ✦ ✧ ✦ ✧ ✦ ✧ ✦ ✧ ✦ ✧ ✦"
+    SECTION       = "◆━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━◆"
+    INVISIBLE     = "\u200b"
+    BULLET_DIAMOND = "◆"
+    BULLET_ARROW   = "➤"
+    BULLET_STAR    = "✦"
+    BULLET_DOT     = "•"
+    BULLET_GEM     = "❖"
+
+    def color_bar(hex_color: int) -> str:
+        return f"https://singlecolorimage.com/get/{hex_color:06X}/800x4.png"
+
+    def color_banner(hex_color: int) -> str:
+        return f"https://singlecolorimage.com/get/{hex_color:06X}/800x80.png"
+
+    def quote(text: str) -> str:
+        return "\n".join(f"> {line}" if line.strip() else ">" for line in text.split("\n"))
+
+    def big_quote(text: str) -> str:
+        return f">>> {text}"
+
+    def section(title: str, body: str, emoji: str = "◆") -> str:
+        return f"### {emoji}  {title}\n{quote(body)}"
+
+    def kv(rows, inline_sep: str = "  •  ") -> str:
+        return "\n".join(f"{BULLET_ARROW}  **{k}:**  {v}" for k, v in rows)
+
+    def fuse_embed(title="", description="", color=0xE91E63, *,
+                   author=None, author_name=None, guild=None, footer=None,
+                   thumbnail=None, show_thumbnail=True, show_color_bar=True,
+                   show_color_banner=False, timestamp=True, fields=None, **kwargs):
+        srv = guild.name if guild else "FUSE | FS"
+        emb = discord.Embed(
+            title=title or None, description=description or None,
+            color=color, timestamp=datetime.utcnow() if timestamp else None,
+        )
+        if author:
+            emb.set_author(name=str(author), icon_url=author.display_avatar.url)
+        elif author_name:
+            emb.set_author(name=author_name, icon_url=guild.icon.url if (guild and guild.icon) else None)
+        else:
+            emb.set_author(name=f"{srv}  ❖  Premium",
+                           icon_url=guild.icon.url if (guild and guild.icon) else None)
+        if thumbnail:
+            emb.set_thumbnail(url=thumbnail)
+        elif show_thumbnail and guild and guild.icon:
+            emb.set_thumbnail(url=guild.icon.url)
+        if fields:
+            for f in fields:
+                emb.add_field(name=f.get("name", INVISIBLE),
+                              value=f.get("value", INVISIBLE),
+                              inline=f.get("inline", False))
+        if show_color_banner:
+            emb.set_image(url=color_banner(color))
+        elif show_color_bar:
+            emb.set_image(url=color_bar(color))
+        emb.set_footer(
+            text=footer or f"{srv}  ❖  Roblox Roleplay Community  ❖  Premium Edition",
+            icon_url=guild.icon.url if (guild and guild.icon) else None,
+        )
+        return emb
+
+    def banner_embed(headline, subline, sections, color=0xE91E63,
+                     guild=None, footer=None, author=None, accent="💎"):
+        parts = [
+            f"# {accent}  {headline.upper()}",
+            SOFT_DIVIDER,
+            big_quote(subline),
+            "",
+        ]
+        for emoji, t, body in sections:
+            parts.append(f"### {emoji}  __{t}__")
+            parts.append(quote(body))
+            parts.append("")
+        return fuse_embed(
+            title="", description="\n".join(parts).strip(),
+            color=color, guild=guild, footer=footer, author=author,
+        )
+
+    def success_embed(title, body, guild=None, author=None):
+        return fuse_embed(f"✅  {title}",
+                          f"{SOFT_DIVIDER}\n{big_quote(body)}\n{SOFT_DIVIDER}",
+                          0x2ECC71, guild=guild, author=author)
+
+    def error_embed(title, body, guild=None, author=None):
+        return fuse_embed(f"❌  {title}",
+                          f"{SOFT_DIVIDER}\n{big_quote(body)}\n{SOFT_DIVIDER}",
+                          0xE74C3C, guild=guild, author=author)
+
+    def info_embed(title, body, guild=None, author=None):
+        return fuse_embed(f"ℹ️  {title}",
+                          f"{SOFT_DIVIDER}\n{big_quote(body)}\n{SOFT_DIVIDER}",
+                          0x3498DB, guild=guild, author=author)
+
+LINE = DIVIDER  # Backwards-Compat
 
 
 # ─────────────────────────────────────────────────────────────────── #
