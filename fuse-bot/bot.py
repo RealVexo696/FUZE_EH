@@ -757,55 +757,925 @@ async def wipe_server(g: discord.Guild) -> None:
 
 # ─────────────────────────────────────────────────────────────────── #
 # KANAL-INHALTE
-# ═══════════════════════════════════════════════════════════════════ #
-# CHANNEL-INHALTE — Components V2 Panels
-# ═══════════════════════════════════════════════════════════════════ #
-import panels
-
-
+# ─────────────────────────────────────────────────────────────────── #
 async def fill_channels(g: discord.Guild) -> None:
-    """Befüllt wichtige Kanäle mit Components V2 Layouts (statt Embeds)."""
+    # ════════════════════════════════════════════════════════════════
+    # 📜 REGELWERK
+    # ════════════════════════════════════════════════════════════════
+    rules_ch = discord.utils.get(g.text_channels, name="📜・regelwerk")
+    if rules_ch and not [m async for m in rules_ch.history(limit=1)]:
+        # Header-Embed
+        header = banner_embed(
+            headline="Regelwerk",
+            subline=(
+                f"**Willkommen in unserer Familie.** ❖\n"
+                f"*Diese Regeln gelten für **jeden** auf **{SERVER_NAME}** — ohne Ausnahme.*\n"
+                f"*Mit deinem **Verify** akzeptierst du sie automatisch.*"
+            ),
+            sections=[
+                ("📖", "Wichtig",
+                 "Dieser Server ist **ausschließlich** für Roblox-Roleplay & Notruf-Hamburg gedacht.\n"
+                 "**Nichts** davon hat einen Real-Life-Bezug."),
+            ],
+            color=BRAND_COLOR, guild=g, accent="📜",
+        )
+        await rules_ch.send(embed=header)
 
-    async def _send_if_empty(ch_name: str, view_factory):
+        # Regeln aufgesplittet in 2 Embeds für maximale Lesbarkeit
+        rules_a = [
+            ("🤝", "§1  Respekt",
+             "Behandle jedes Mitglied **freundlich**.\nKeine Beleidigungen, kein Mobbing, kein Rassismus, kein Sexismus."),
+            ("🔇", "§2  Kein Spam",
+             "Kein Spammen von Nachrichten, Pings, Emojis oder Reaktionen.\nHalte den Chat sauber & lesbar."),
+            ("📢", "§3  Werbung",
+             "Werbung jeglicher Art (DM oder Channel) ist **ohne Erlaubnis verboten**.\nBei Interesse → Ticket eröffnen."),
+            ("🔞", "§4  NSFW",
+             "NSFW-, Gore- oder anstößige Inhalte sind **strikt untersagt**.\nVerstöße = sofortiger Bann."),
+            ("📜", "§5  Discord-ToS",
+             "Die [Discord Richtlinien](https://discord.com/terms) gelten **jederzeit**.\nDazu gehören u.a. Mindestalter, Datenschutz, Selfbots."),
+            ("💬", "§6  Channel-Themen",
+             "Halte dich an die Themen der jeweiligen Kanäle.\nOff-Topic gehört in <#💬・chat>."),
+        ]
+        rules_b = [
+            ("🎭", "§7  Roleplay",
+             "In RP-Kanälen wird **im Charakter** geschrieben.\nKeine OOC-Diskussionen mitten im RP."),
+            ("🛡️", "§8  Team-Anweisungen",
+             "Anweisungen des Teams sind **ohne Diskussion** zu befolgen.\nBeschwerden via Ticket."),
+            ("🐛", "§9  Bugs / Exploits",
+             "Bekannte Bugs melden — **niemals ausnutzen**.\nExploits = permanenter Bann."),
+            ("🔐", "§10  Account-Sicherheit",
+             "Teile **keine** Account-Daten.\nPhishing-Links → **sofortiger Bann**, kein Pardon."),
+            ("🎮", "§11  Roblox-Only",
+             "Dieser Server ist ausschließlich **Roblox-Roleplay**.\nKein Real-Life-Drama hier."),
+            ("⚖️", "§12  Strafkatalog",
+             "Verstöße werden mit **Verwarnung → Mute → Kick → Bann** sanktioniert.\n3 Warns = 1h Mute, 5 Warns = Auto-Ban."),
+        ]
+
+        body_a = banner_embed(
+            headline="Regeln  §1 – §6",
+            subline="*Allgemeine Verhaltensregeln*",
+            sections=[(e, t, b) for e, t, b in rules_a],
+            color=BRAND_COLOR, guild=g, accent="📋",
+        )
+        body_b = banner_embed(
+            headline="Regeln  §7 – §12",
+            subline="*RP, Sicherheit & Konsequenzen*",
+            sections=[(e, t, b) for e, t, b in rules_b],
+            color=BRAND_COLOR, guild=g, accent="⚖️",
+            footer="Verstöße werden konsequent geahndet  ❖  FUSE | FS",
+        )
+        await rules_ch.send(embed=body_a)
+        await rules_ch.send(embed=body_b)
+
+    # ════════════════════════════════════════════════════════════════
+    # 🔐 VERIFY
+    # ════════════════════════════════════════════════════════════════
+    verify_ch = discord.utils.get(g.text_channels, name="✅・verify")
+    if verify_ch and not [m async for m in verify_ch.history(limit=1)]:
+        emb = banner_embed(
+            headline="Verifizierung",
+            subline=(
+                f"**Willkommen bei {SERVER_NAME}!** 👋\n"
+                f"*Damit du den vollen Server erkunden kannst, musst du dich kurz verifizieren.*"
+            ),
+            sections=[
+                ("🔽", "So funktioniert's",
+                 "**1.**  Klicke unten auf  **✅ Verifizieren**\n"
+                 "**2.**  Du erhältst sofort Zugriff auf den **Bewerbungs-Bereich**\n"
+                 "**3.**  Sende deine Bewerbung ab\n"
+                 "**4.**  Nach Annahme bist du **Member** & siehst alles 🎉"),
+                ("📜", "Mit dem Klick bestätigst du",
+                 "*…dass du das* <#📜・regelwerk> *gelesen & akzeptiert hast.*"),
+            ],
+            color=SUCCESS_COLOR, guild=g, accent="🔐",
+            footer="Sicheres Verify-System  ❖  Premium",
+        )
+        await verify_ch.send(embed=emb, view=VerifyView())
+
+    # ════════════════════════════════════════════════════════════════
+    # 👋 WILLKOMMEN-INFO
+    # ════════════════════════════════════════════════════════════════
+    welcome_ch = discord.utils.get(g.text_channels, name="👋・willkommen")
+    if welcome_ch and not [m async for m in welcome_ch.history(limit=1)]:
+        emb = banner_embed(
+            headline=f"Willkommen auf {SERVER_NAME}",
+            subline=(
+                "**Roblox  ✘  Roleplay  ✘  Crime-Gang** 💎\n"
+                "*Schön dass du den Weg zu uns gefunden hast.*\n"
+                "*Wir sind eine aktive Community rund um Roblox-RP & Notruf Hamburg.*"
+            ),
+            sections=[
+                ("📌", "Deine ersten Schritte",
+                 f"{BULLET_ARROW}  Lies dir das <#📜・regelwerk> durch\n"
+                 f"{BULLET_ARROW}  Verifiziere dich im <#✅・verify>\n"
+                 f"{BULLET_ARROW}  Sende deine Bewerbung im <#📋・bewerbung>\n"
+                 f"{BULLET_ARROW}  Werde **Member** & erlebe die volle Community"),
+                ("💎", "Was dich erwartet",
+                 f"{BULLET_STAR}  Aktive Voice- & Chat-Community\n"
+                 f"{BULLET_STAR}  Events, Giveaways & Meetings\n"
+                 f"{BULLET_STAR}  Eigenes Roleplay-System\n"
+                 f"{BULLET_STAR}  Faires & freundliches Team"),
+            ],
+            color=BRAND_COLOR, guild=g, accent="🎉",
+        )
+        await welcome_ch.send(embed=emb)
+
+    # ════════════════════════════════════════════════════════════════
+    # 📖 BEWERBUNGS-INFOS
+    # ════════════════════════════════════════════════════════════════
+    binfo_ch = discord.utils.get(g.text_channels, name="❓・bewerbungs-info")
+    if binfo_ch and not [m async for m in binfo_ch.history(limit=1)]:
+        emb = banner_embed(
+            headline="Bewerbungs-Ablauf",
+            subline="*So läuft deine Bewerbung ab — Schritt für Schritt.*",
+            sections=[
+                ("📝", "Schritt 1  —  Formular",
+                 "Gehe in <#📋・bewerbung> und klicke auf\n**📋 Bewerbung starten**."),
+                ("⏳", "Schritt 2  —  Warten",
+                 "Das Team prüft deine Bewerbung — meist innerhalb von\n**24 – 48 Stunden**."),
+                ("✅", "Schritt 3  —  Annahme",
+                 "Wirst du angenommen, bekommst du automatisch die\n**💠 Member**-Rolle und **vollen Zugriff**."),
+                ("❌", "Schritt 4  —  Ablehnung",
+                 "Bei Ablehnung gibt es eine **30 Min Sperre** bevor\ndu eine neue Bewerbung senden kannst.\nDu bekommst eine **DM mit Begründung**."),
+            ],
+            color=INFO_COLOR, guild=g, accent="📖",
+        )
+        await binfo_ch.send(embed=emb)
+
+    # ════════════════════════════════════════════════════════════════
+    # 📋 BEWERBUNG (Button)
+    # ════════════════════════════════════════════════════════════════
+    bewerb_ch = discord.utils.get(g.text_channels, name="📋・bewerbung")
+    if bewerb_ch and not [m async for m in bewerb_ch.history(limit=1)]:
+        emb = banner_embed(
+            headline="Bewerbung",
+            subline=(
+                "**Du möchtest Member werden?** 🎯\n"
+                "*Klicke unten auf  **📋 Bewerbung starten**  — es öffnet sich ein Formular.\n"
+                "Beantworte alle Fragen ehrlich und ausführlich.*"
+            ),
+            sections=[
+                ("📌", "Wichtige Hinweise",
+                 f"{BULLET_ARROW}  Pro Versuch **1 Bewerbung**\n"
+                 f"{BULLET_ARROW}  Bei Ablehnung: **30 Min Sperre**\n"
+                 f"{BULLET_ARROW}  Bei Annahme: **sofort Member** 🎉"),
+                ("⏱️", "Bearbeitungszeit",
+                 "In der Regel  **24 – 48 Stunden**.\n"
+                 "Bei längerer Bearbeitung pingt der Bot automatisch das Recruiter-Team."),
+            ],
+            color=BRAND_COLOR, guild=g, accent="📋",
+        )
+        await bewerb_ch.send(embed=emb, view=ApplyView())
+
+    # ════════════════════════════════════════════════════════════════
+    # 📖 TICKET-INFO
+    # ════════════════════════════════════════════════════════════════
+    tinfo_ch = discord.utils.get(g.text_channels, name="📖・ticket-info")
+    if tinfo_ch and not [m async for m in tinfo_ch.history(limit=1)]:
+        emb = banner_embed(
+            headline="Ticket-System",
+            subline="*Wofür kannst du ein Ticket öffnen?*",
+            sections=[
+                ("❓", "Allgemeine Frage",   "Du hast eine Frage rund um den Server."),
+                ("🐛", "Problem / Bug",      "Etwas funktioniert nicht oder ist kaputt."),
+                ("🚨", "Player-Meldung",     "Ein anderer Spieler verstößt gegen Regeln.\n*(Modal mit Wer/Was/Beweise)*"),
+                ("🤝", "Partnerschaft",      "Du möchtest eine Partnerschaft anfragen."),
+                ("💎", "Sonstiges",          "Alles was nicht in andere Kategorien passt."),
+            ],
+            color=GOLD, guild=g, accent="📖",
+        )
+        await tinfo_ch.send(embed=emb)
+
+    # ════════════════════════════════════════════════════════════════
+    # 🎫 TICKET ERÖFFNEN (Select)
+    # ════════════════════════════════════════════════════════════════
+    ticket_ch = discord.utils.get(g.text_channels, name="🎫・ticket-öffnen")
+    if ticket_ch and not [m async for m in ticket_ch.history(limit=1)]:
+        emb = banner_embed(
+            headline="Ticket eröffnen",
+            subline=(
+                "**Brauchst du Hilfe?** 💬\n"
+                "*Wähle unten eine **Kategorie** aus dem Menü.\n"
+                "Es wird ein privater Kanal für dich und das Team erstellt.*"
+            ),
+            sections=[
+                ("⚡", "Was passiert",
+                 f"{BULLET_DOT}  Eigener privater Kanal für dich\n"
+                 f"{BULLET_DOT}  Nur du & das Team können ihn sehen\n"
+                 f"{BULLET_DOT}  Beim Schließen: **HTML-Transcript** per DM"),
+                ("⚠️", "Hinweis",
+                 "*Missbrauch des Ticket-Systems wird sanktioniert.\n"
+                 "Pro User maximal **1 offenes Ticket pro Kategorie**.*"),
+            ],
+            color=GOLD, guild=g, accent="🎫",
+        )
+        await ticket_ch.send(embed=emb, view=TicketCategoryView())
+
+    # ── Ankündigung / Boosts / Chat / Partnerschaft / Owner / Admin
+    for ch_name, title, desc, color in [
+        ("🔔・ankündigung",
+            "🔔  ANKÜNDIGUNGEN",
+            "### 📣  Hier postet das Team alle wichtigen News.\n\n"
+            "➤  Updates & Patches\n➤  Events & Meetings\n➤  Regel-Änderungen",
+            BRAND_COLOR),
+        ("🚀・boosts",
+            "🚀  SERVER BOOSTS",
+            f"### 💖  Danke an alle Booster!\n\n"
+            f"Mit einem Boost unterstützt du **{SERVER_NAME}** und bekommst:\n"
+            f"➤  💖  Booster-Rolle\n➤  🔒  Locked-Lounges\n➤  🎨  Eigene Farbe",
+            0xF47FFF),
+        ("💬・chat",
+            "💬  COMMUNITY-CHAT",
+            "Hier kannst du **frei mit anderen Membern quatschen**.\nHalte dich an die Regeln und hab Spaß!",
+            BRAND_COLOR),
+        ("🛡️・partnerschaft",
+            "🤝  PARTNERSCHAFT",
+            "### 📑  Anforderungen\n"
+            "➤  **min. 50 Member**\n➤  aktive Community\n➤  keine NSFW / Toxic Server\n\n"
+            "### 📨  Interesse?\nÖffne ein Ticket und wähle 'Partnerschaft'.",
+            0x1ABC9C),
+        ("👑・owner-chat",
+            "👑  OWNER-CHAT",
+            "Privater Kanal **ausschließlich** für Owner & Co-Owner.",
+            0xFF0000),
+        ("⚡・admin-chat",
+            "⚡  ADMIN-CHAT",
+            "Privater Kanal für das **Admin-Team**.",
+            0xFF8000),
+    ]:
         ch = discord.utils.get(g.text_channels, name=ch_name)
         if ch and not [m async for m in ch.history(limit=1)]:
+            await ch.send(embed=fuse_embed(title=title, description=desc, color=color, guild=g))
+
+
+# ─────────────────────────────────────────────────────────────────── #
+# VIEWS — SETUP
+# ─────────────────────────────────────────────────────────────────── #
+class SetupView(discord.ui.View):
+    def __init__(self, author_id: int):
+        super().__init__(timeout=180)
+        self.author_id = author_id
+
+    async def interaction_check(self, interaction):
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("❌  Nur der Befehls-Autor.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="Abbruch", style=discord.ButtonStyle.danger, emoji="🛑")
+    async def cancel(self, interaction, button):
+        await interaction.response.edit_message(
+            embed=fuse_embed("🛑  Setup abgebrochen", "Keine Änderungen vorgenommen.", ERROR_COLOR, guild=interaction.guild),
+            view=None,
+        )
+
+    @discord.ui.button(label="Nur Hinzufügen", style=discord.ButtonStyle.primary, emoji="➕")
+    async def only_add(self, interaction, button):
+        await interaction.response.edit_message(
+            embed=fuse_embed("⏳  Setup läuft…", "Fehlende Rollen & Kanäle werden ergänzt.", INFO_COLOR, guild=interaction.guild),
+            view=None,
+        )
+        msg = await interaction.original_response()
+        await run_setup(interaction.guild, msg, wipe=False)
+
+    @discord.ui.button(label="Komplett neu aufsetzen", style=discord.ButtonStyle.success, emoji="♻️")
+    async def fresh(self, interaction, button):
+        await interaction.response.edit_message(
+            embed=fuse_embed(
+                "⚠️  Wirklich KOMPLETT neu aufsetzen?",
+                "**ALLE Kanäle und Rollen werden gelöscht!**\nDieser Vorgang ist **NICHT** rückgängig zu machen.",
+                ERROR_COLOR, guild=interaction.guild,
+            ),
+            view=ConfirmWipeView(self.author_id),
+        )
+
+
+class ConfirmWipeView(discord.ui.View):
+    def __init__(self, author_id: int):
+        super().__init__(timeout=60)
+        self.author_id = author_id
+
+    async def interaction_check(self, interaction):
+        return interaction.user.id == self.author_id
+
+    @discord.ui.button(label="Ja, alles löschen", style=discord.ButtonStyle.danger, emoji="♻️")
+    async def yes(self, interaction, button):
+        await interaction.response.edit_message(
+            embed=fuse_embed("⏳  Server wird zurückgesetzt…",
+                             "Alle Kanäle & Rollen werden gelöscht und neu aufgebaut.",
+                             INFO_COLOR, guild=interaction.guild),
+            view=None,
+        )
+        msg = await interaction.original_response()
+        await run_setup(interaction.guild, msg, wipe=True)
+
+    @discord.ui.button(label="Abbrechen", style=discord.ButtonStyle.secondary, emoji="✖️")
+    async def no(self, interaction, button):
+        await interaction.response.edit_message(
+            embed=fuse_embed("🛑  Abgebrochen", "Es wurde nichts geändert.", ERROR_COLOR, guild=interaction.guild),
+            view=None,
+        )
+
+
+# ─────────────────────────────────────────────────────────────────── #
+# VIEWS — VERIFY
+# ─────────────────────────────────────────────────────────────────── #
+class VerifyView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Verifizieren", style=discord.ButtonStyle.success, emoji="✅", custom_id="fuse_verify_btn")
+    async def verify(self, interaction, button):
+        g, m = interaction.guild, interaction.user
+        unv = find_role(g, KEY_ROLES["unverified"])
+        ver = find_role(g, KEY_ROLES["verified"])
+        bew = find_role(g, KEY_ROLES["bewerber"])
+        if ver and ver in m.roles:
+            return await interaction.response.send_message("✅  Du bist bereits verifiziert!", ephemeral=True)
+        try:
+            if unv and unv in m.roles: await m.remove_roles(unv, reason="Verify")
+            if ver:                    await m.add_roles(ver, reason="Verify")
+            if bew:                    await m.add_roles(bew, reason="Verify -> Bewerber")
+            emb = banner_embed(
+                headline="Verifizierung erfolgreich!",
+                subline=f"**Willkommen, {m.mention}!** 🎉",
+                sections=[
+                    ("✅", "Du hast jetzt Zugriff auf",
+                     f"{BULLET_ARROW}  <#📋・bewerbung>\n"
+                     f"{BULLET_ARROW}  <#❓・bewerbungs-info>\n"
+                     f"{BULLET_ARROW}  <#🎙️・warteraum> *(Voice)*"),
+                    ("📋", "Dein nächster Schritt",
+                     "Gehe in <#📋・bewerbung> und klicke auf  **📋 Bewerbung starten**.\n"
+                     "*Beantworte das Formular ehrlich — viel Erfolg!* 🍀"),
+                ],
+                color=SUCCESS_COLOR, guild=g, author=m, accent="🎉",
+            )
+            await interaction.response.send_message(embed=emb, ephemeral=True)
+            log_ch = get_log_channel(g, "verify")
+            if log_ch:
+                await log_ch.send(embed=fuse_embed(
+                    "✅  User verifiziert",
+                    f"{m.mention} (`{m.id}`)",
+                    SUCCESS_COLOR, author=m, guild=g,
+                ))
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "❌  Mir fehlen die Rechte! Schiebe die Bot-Rolle ganz nach oben.", ephemeral=True,
+            )
+
+
+# ─────────────────────────────────────────────────────────────────── #
+# VIEWS / MODAL — BEWERBUNG
+# ─────────────────────────────────────────────────────────────────── #
+class ApplicationModal(discord.ui.Modal, title="📋 FUSE | FS — Bewerbung"):
+    roblox_name = discord.ui.TextInput(
+        label="Roblox-Name & Alter",
+        placeholder="z.B. JustVexo • 15 Jahre",
+        max_length=80, required=True,
+    )
+    experience = discord.ui.TextInput(
+        label="Wie lange spielst du Roblox-RP?",
+        placeholder="z.B. 2 Jahre Notruf Hamburg, ...",
+        max_length=200, required=True,
+    )
+    why_fuse = discord.ui.TextInput(
+        label="Warum möchtest du zu FUSE?",
+        style=discord.TextStyle.paragraph,
+        placeholder="Erkläre, warum gerade FUSE...",
+        max_length=600, required=True,
+    )
+    offer = discord.ui.TextInput(
+        label="Was bietest du der Gang?",
+        style=discord.TextStyle.paragraph,
+        placeholder="Skills, Aktivität, Persönlichkeit, ...",
+        max_length=600, required=True,
+    )
+    activity = discord.ui.TextInput(
+        label="Aktivität (Std./Woche) + Mikrofon?",
+        placeholder="z.B. ~15 Std/Woche, Mikrofon: Ja",
+        max_length=100, required=True,
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        g, m = interaction.guild, interaction.user
+        log_ch = get_log_channel(g, "application")
+        if not log_ch:
+            return await interaction.response.send_message(
+                "❌  Bewerbungs-Log-Kanal nicht gefunden. Bitte Admin informieren.", ephemeral=True,
+            )
+
+        emb = banner_embed(
+            headline="Neue Bewerbung",
+            subline=(
+                f"**Bewerber:** {m.mention}\n"
+                f"*Eine neue Bewerbung liegt zur Prüfung bereit.*"
+            ),
+            sections=[],  # wir fügen Felder unten an
+            color=INFO_COLOR, guild=g, author=m, accent="📨",
+        )
+        emb.add_field(name=f"👤  Roblox-Name & Alter",     value=f">>> {self.roblox_name.value}", inline=False)
+        emb.add_field(name=f"🎮  RP-Erfahrung",             value=f">>> {self.experience.value}",  inline=False)
+        emb.add_field(name=f"💡  Warum FUSE?",               value=f">>> {self.why_fuse.value}",    inline=False)
+        emb.add_field(name=f"🎯  Was bietest du uns?",      value=f">>> {self.offer.value}",       inline=False)
+        emb.add_field(name=f"⏱️  Aktivität & Mikrofon",      value=f">>> {self.activity.value}",    inline=False)
+        emb.add_field(name=f"\u200b",                       value=DIVIDER,                          inline=False)
+        emb.add_field(name=f"🆔  User-ID",                  value=f"`{m.id}`",                                         inline=True)
+        emb.add_field(name=f"📅  Account",                  value=f"<t:{int(m.created_at.timestamp())}:R>",            inline=True)
+        emb.add_field(name=f"👥  Member-Count",             value=f"`{g.member_count}`",                               inline=True)
+        # ID auch im Footer speichern (für persistente Buttons nach Bot-Restart)
+        emb.set_footer(text=f"Bewerber-ID: {m.id}  •  {SERVER_NAME}",
+                       icon_url=g.icon.url if g.icon else None)
+
+        view = ApplicationDecisionView()
+        sent = await log_ch.send(content=f"📨  Neue Bewerbung von {m.mention}", embed=emb, view=view)
+
+        # In DB persistieren für Auto-Reminder & Dashboard
+        db.DATA["applications"][str(sent.id)] = {
+            "applicant_id": m.id,
+            "posted_ts": time.time(),
+            "decided": None,
+            "reminded": False,
+            "channel_id": log_ch.id,
+        }
+        db.save()
+
+        # Bestätigung an User
+        await interaction.response.send_message(
+            embed=banner_embed(
+                headline="Bewerbung abgeschickt!",
+                subline="*Deine Bewerbung wurde an das Team weitergeleitet.* ✅",
+                sections=[
+                    ("⏱️", "Bearbeitungszeit",
+                     "In der Regel  **24 – 48 Stunden**.\n"
+                     "Du bekommst eine **DM** sobald entschieden wurde."),
+                    ("💡", "Tipp",
+                     "Halte Discord-DMs für unseren Bot **offen**, damit du benachrichtigt wirst."),
+                ],
+                color=SUCCESS_COLOR, guild=g, author=m, accent="✅",
+            ),
+            ephemeral=True,
+        )
+
+
+class ApplyView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Bewerbung starten", style=discord.ButtonStyle.success, emoji="📋", custom_id="fuse_apply_btn")
+    async def apply(self, interaction, button):
+        g, m = interaction.guild, interaction.user
+        # Check: schon Member?
+        member_role = find_role(g, KEY_ROLES["member"])
+        if member_role and member_role in m.roles:
+            return await interaction.response.send_message("✅  Du bist bereits Member!", ephemeral=True)
+        # Check: verifiziert?
+        ver = find_role(g, KEY_ROLES["verified"])
+        if ver and ver not in m.roles:
+            return await interaction.response.send_message(
+                "❌  Du musst dich zuerst verifizieren (<#✅・verify>).", ephemeral=True,
+            )
+        # Check: Cooldown?
+        cd = get_cooldown(m.id)
+        if cd and cd > datetime.now(timezone.utc):
+            return await interaction.response.send_message(
+                embed=banner_embed(
+                    headline="Du bist gesperrt",
+                    subline="*Deine letzte Bewerbung wurde abgelehnt.*",
+                    sections=[
+                        ("⏳", "Wieder möglich",
+                         f"{BULLET_ARROW}  <t:{int(cd.timestamp())}:R>\n"
+                         f"{BULLET_ARROW}  <t:{int(cd.timestamp())}:F>"),
+                        ("💡", "Tipp",
+                         "Nutze die Zeit um deine Antworten besser vorzubereiten!"),
+                    ],
+                    color=ERROR_COLOR, guild=g, author=m, accent="⏳",
+                ),
+                ephemeral=True,
+            )
+        await interaction.response.send_modal(ApplicationModal())
+
+
+class ApplicationDecisionView(discord.ui.View):
+    """Buttons für Admins um eine Bewerbung anzunehmen / abzulehnen.
+    Persistent: applicant_id wird aus dem Embed-Footer extrahiert."""
+
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @staticmethod
+    def _extract_applicant_id(message: discord.Message) -> Optional[int]:
+        """Extrahiert die Bewerber-ID aus dem Footer des Embeds."""
+        if not message.embeds:
+            return None
+        footer = message.embeds[0].footer.text or ""
+        # Format: "Bewerber-ID: 1234567890..."
+        import re
+        m = re.search(r"Bewerber-ID:\s*(\d+)", footer)
+        return int(m.group(1)) if m else None
+
+    @discord.ui.button(label="Annehmen", style=discord.ButtonStyle.success, emoji="✅", custom_id="apply_accept")
+    async def accept(self, interaction, button):
+        if not interaction.user.guild_permissions.manage_roles:
+            return await interaction.response.send_message("❌  Du brauchst **Rollen verwalten**.", ephemeral=True)
+        applicant_id = self._extract_applicant_id(interaction.message)
+        if applicant_id is None:
+            return await interaction.response.send_message("❌  Bewerber-ID nicht ermittelbar.", ephemeral=True)
+
+        g = interaction.guild
+        applicant = g.get_member(applicant_id)
+        if applicant is None:
+            return await interaction.response.send_message("❌  Der Bewerber ist nicht mehr auf dem Server.", ephemeral=True)
+
+        member_role  = find_role(g, KEY_ROLES["member"])
+        bewerber_role = find_role(g, KEY_ROLES["bewerber"])
+        try:
+            if member_role:   await applicant.add_roles(member_role, reason=f"Bewerbung angenommen von {interaction.user}")
+            if bewerber_role and bewerber_role in applicant.roles:
+                await applicant.remove_roles(bewerber_role, reason="Bewerbung angenommen")
+            clear_cooldown(applicant.id)
+        except discord.Forbidden:
+            return await interaction.response.send_message("❌  Rechte fehlen (Bot-Rolle zu niedrig?).", ephemeral=True)
+
+        # Embed aktualisieren
+        old = interaction.message.embeds[0] if interaction.message.embeds else None
+        emb = fuse_embed(
+            title="✅  BEWERBUNG ANGENOMMEN",
+            description=f"Bewerbung von {applicant.mention} wurde **angenommen**.",
+            color=SUCCESS_COLOR, guild=g, author=applicant,
+        )
+        emb.add_field(name="✅  Entschieden von", value=interaction.user.mention, inline=True)
+        emb.add_field(name="🕒  Zeitpunkt",       value=f"<t:{int(datetime.now(timezone.utc).timestamp())}:F>", inline=True)
+        if old:
+            for f in old.fields:
+                if f.name not in ("✅  Entschieden von", "🕒  Zeitpunkt"):
+                    emb.add_field(name=f.name, value=f.value, inline=f.inline)
+        emb.set_footer(text=f"Bewerber-ID: {applicant.id}  •  {SERVER_NAME}",
+                       icon_url=g.icon.url if g.icon else None)
+        for c in self.children: c.disabled = True
+        await interaction.response.edit_message(embed=emb, view=self)
+
+        # DB-Status aktualisieren
+        app_entry = db.DATA["applications"].get(str(interaction.message.id))
+        if app_entry:
+            app_entry["decided"] = "accepted"
+            db.save()
+
+        # User benachrichtigen
+        try:
+            dm = banner_embed(
+                headline="Bewerbung angenommen!",
+                subline=f"**Glückwunsch, {applicant.mention}!** 🎉",
+                sections=[
+                    ("💎", "Du bist jetzt Member",
+                     f"Du hast jetzt **vollen Zugriff** auf **{SERVER_NAME}**.\n"
+                     f"Erkunde die Community, lerne andere kennen, hab Spaß!"),
+                    ("📌", "Empfohlene Kanäle",
+                     f"{BULLET_ARROW}  <#💬・chat> — quatschen\n"
+                     f"{BULLET_ARROW}  <#🔔・ankündigung> — News\n"
+                     f"{BULLET_ARROW}  <#🎫・ticket-öffnen> — bei Fragen"),
+                ],
+                color=SUCCESS_COLOR, guild=g, author=applicant, accent="🎉",
+            )
+            await applicant.send(embed=dm)
+        except Exception:
+            pass
+
+    @discord.ui.button(label="Ablehnen", style=discord.ButtonStyle.danger, emoji="❌", custom_id="apply_deny")
+    async def deny(self, interaction, button):
+        if not interaction.user.guild_permissions.manage_roles:
+            return await interaction.response.send_message("❌  Du brauchst **Rollen verwalten**.", ephemeral=True)
+        applicant_id = self._extract_applicant_id(interaction.message)
+        if applicant_id is None:
+            return await interaction.response.send_message("❌  Bewerber-ID nicht ermittelbar.", ephemeral=True)
+        await interaction.response.send_modal(DenyReasonModal(applicant_id=applicant_id, decision_view=self))
+
+
+class DenyReasonModal(discord.ui.Modal, title="❌ Bewerbung ablehnen"):
+    reason = discord.ui.TextInput(
+        label="Begründung für Ablehnung",
+        style=discord.TextStyle.paragraph,
+        placeholder="z.B. zu wenig RP-Erfahrung, unvollständige Antworten ...",
+        max_length=500, required=True,
+    )
+
+    def __init__(self, applicant_id: int, decision_view: discord.ui.View):
+        super().__init__()
+        self.applicant_id = applicant_id
+        self.decision_view = decision_view
+
+    async def on_submit(self, interaction: discord.Interaction):
+        g = interaction.guild
+        applicant = g.get_member(self.applicant_id)
+
+        # Cooldown setzen
+        until = set_cooldown(self.applicant_id, APPLY_COOLDOWN_MIN)
+
+        # Bewerber-Rolle behalten (oder nicht — wir lassen sie drauf damit User Bewerbungsbereich behält)
+
+        # Embed updaten
+        old = interaction.message.embeds[0] if interaction.message.embeds else None
+        emb = fuse_embed(
+            title="❌  BEWERBUNG ABGELEHNT",
+            description=(
+                f"Bewerbung von {applicant.mention if applicant else f'`{self.applicant_id}`'} wurde **abgelehnt**.\n\n"
+                f"**📝  Begründung:**\n```{self.reason.value}```\n"
+                f"**⏳  Sperre:** {APPLY_COOLDOWN_MIN} Minuten — wieder möglich <t:{int(until.timestamp())}:R>"
+            ),
+            color=ERROR_COLOR, guild=g, author=applicant if applicant else None,
+        )
+        emb.add_field(name="❌  Entschieden von", value=interaction.user.mention, inline=True)
+        emb.add_field(name="🕒  Zeitpunkt",        value=f"<t:{int(datetime.now(timezone.utc).timestamp())}:F>", inline=True)
+        if old:
+            for f in old.fields:
+                if f.name not in ("❌  Entschieden von", "🕒  Zeitpunkt"):
+                    emb.add_field(name=f.name, value=f.value, inline=f.inline)
+
+        for c in self.decision_view.children: c.disabled = True
+        await interaction.response.edit_message(embed=emb, view=self.decision_view)
+
+        # DB-Status aktualisieren
+        app_entry = db.DATA["applications"].get(str(interaction.message.id))
+        if app_entry:
+            app_entry["decided"] = "denied"
+            db.save()
+
+        # User benachrichtigen
+        if applicant:
             try:
-                await ch.send(view=view_factory())
+                dm = banner_embed(
+                    headline="Bewerbung abgelehnt",
+                    subline=f"*Leider wurde deine Bewerbung bei **{SERVER_NAME}** abgelehnt.*",
+                    sections=[
+                        ("📝", "Begründung",
+                         f"```{self.reason.value}```"),
+                        ("⏳", "Sperre",
+                         f"Du kannst dich in  **{APPLY_COOLDOWN_MIN} Minuten**  erneut bewerben.\n"
+                         f"Wieder möglich:  <t:{int(until.timestamp())}:R>  *(*<t:{int(until.timestamp())}:F>*)*"),
+                        ("💡", "Tipp",
+                         "Beantworte die Fragen beim nächsten Mal **ausführlicher** und gehe genauer\n"
+                         "auf deine RP-Erfahrung & Motivation ein."),
+                    ],
+                    color=ERROR_COLOR, guild=g, author=applicant, accent="❌",
+                )
+                await applicant.send(embed=dm)
+            except Exception:
+                pass
+
+
+# ─────────────────────────────────────────────────────────────────── #
+# VIEWS / MODAL — TICKETS
+# ─────────────────────────────────────────────────────────────────── #
+TICKET_CATEGORIES = {
+    "general":     {"label": "Allgemeine Frage", "emoji": "❓", "color": INFO_COLOR,
+                    "desc": "Allgemeine Fragen zum Server."},
+    "problem":     {"label": "Problem / Bug",    "emoji": "🐛", "color": ERROR_COLOR,
+                    "desc": "Etwas funktioniert nicht oder ist kaputt."},
+    "report":      {"label": "Player-Meldung",   "emoji": "🚨", "color": 0xFF4500,
+                    "desc": "Ein Spieler verstößt gegen Regeln."},
+    "partner":     {"label": "Partnerschaft",    "emoji": "🤝", "color": 0x1ABC9C,
+                    "desc": "Partner-Anfrage."},
+    "other":       {"label": "Sonstiges",        "emoji": "💎", "color": PURPLE,
+                    "desc": "Alles andere."},
+}
+
+
+class TicketCategoryView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.select(
+        placeholder="🎫  Wähle eine Ticket-Kategorie…",
+        custom_id="fuse_ticket_select",
+        min_values=1, max_values=1,
+        options=[
+            discord.SelectOption(label=c["label"], emoji=c["emoji"], description=c["desc"], value=key)
+            for key, c in TICKET_CATEGORIES.items()
+        ],
+    )
+    async def select(self, interaction: discord.Interaction, sel: discord.ui.Select):
+        cat_key = sel.values[0]
+        if cat_key == "report":
+            # Player-Meldung → Modal mit Details
+            await interaction.response.send_modal(ReportModal())
+        else:
+            await create_ticket(interaction, cat_key)
+
+
+class ReportModal(discord.ui.Modal, title="🚨 Player-Meldung"):
+    reported_user = discord.ui.TextInput(
+        label="Wen meldest du? (Discord-Name / ID)",
+        placeholder="z.B. @JustVexo  oder  123456789012345678",
+        max_length=100, required=True,
+    )
+    what_happened = discord.ui.TextInput(
+        label="Was ist passiert?",
+        style=discord.TextStyle.paragraph,
+        placeholder="Beschreibe genau was passiert ist...",
+        max_length=800, required=True,
+    )
+    proof = discord.ui.TextInput(
+        label="Beweise (Links zu Bildern/Clips)",
+        style=discord.TextStyle.paragraph,
+        placeholder="https://...   (Discord-Anhänge danach im Ticket möglich)",
+        max_length=400, required=False,
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await create_ticket(
+            interaction, "report",
+            extra_fields={
+                "🎯  Gemeldeter User": f"```{self.reported_user.value}```",
+                "📝  Was passierte":   f"```{self.what_happened.value}```",
+                "📎  Beweise":         f"```{self.proof.value or '— keine —'}```",
+            },
+        )
+
+
+async def create_ticket(interaction: discord.Interaction, cat_key: str,
+                        extra_fields: Optional[dict] = None):
+    g, m = interaction.guild, interaction.user
+    cat = TICKET_CATEGORIES[cat_key]
+
+    existing = discord.utils.get(g.text_channels, name=f"ticket-{cat_key}-{m.name.lower()}")
+    if existing:
+        return await interaction.response.send_message(
+            f"❗  Du hast bereits ein offenes Ticket: {existing.mention}", ephemeral=True,
+        )
+
+    parent = find_category(g, "🎫 ✘ SUPPORT")
+    ow = {
+        g.default_role: discord.PermissionOverwrite(view_channel=False),
+        m:              discord.PermissionOverwrite(view_channel=True, send_messages=True,
+                                                    attach_files=True, read_message_history=True,
+                                                    embed_links=True),
+        g.me:           discord.PermissionOverwrite(view_channel=True, send_messages=True, manage_channels=True),
+    }
+    for rn in STAFF_ROLE_NAMES:
+        r = find_role(g, rn)
+        if r:
+            ow[r] = discord.PermissionOverwrite(view_channel=True, send_messages=True, manage_messages=True)
+
+    ticket = await g.create_text_channel(
+        f"ticket-{cat_key}-{m.name.lower()}"[:90],
+        category=parent, overwrites=ow,
+        topic=f"{cat['label']} • Ersteller: {m.id}",
+        reason=f"Ticket: {cat['label']}",
+    )
+
+    sections_list = [
+        ("📝", "Beschreibe dein Anliegen",
+         "Bitte beschreibe dein Anliegen **so genau wie möglich**.\n"
+         "Füge Screenshots, Beweise oder Links bei wenn relevant."),
+        ("⏱️", "Bearbeitungszeit",
+         "Das Team meldet sich in der Regel innerhalb **weniger Minuten**.\n"
+         "Bitte habe etwas Geduld — wir kümmern uns!"),
+        ("🔒", "Nach dem Schließen",
+         "Beim Schließen erhältst du **per DM** ein\n"
+         "vollständiges **HTML-Transcript** der Konversation."),
+    ]
+    emb = banner_embed(
+        headline=f"Ticket  ❖  {cat['label']}",
+        subline=f"**Hallo {m.mention}!** {cat['emoji']}\n*Vielen Dank für dein Anliegen — ein Team-Mitglied meldet sich gleich.*",
+        sections=sections_list,
+        color=cat["color"], guild=g, author=m, accent=cat["emoji"],
+        footer=f"Ticket-Opener: {m.id}  ❖  Kategorie: {cat['label']}",
+    )
+    if extra_fields:
+        for k, v in extra_fields.items():
+            emb.add_field(name=k, value=v, inline=False)
+
+    await ticket.send(content=f"{m.mention}  •  {' '.join(find_role(g, r).mention for r in ('🔨 Moderator',) if find_role(g, r))}",
+                      embed=emb, view=TicketControlView())
+
+    # Response
+    if not interaction.response.is_done():
+        await interaction.response.send_message(f"✅  Ticket erstellt: {ticket.mention}", ephemeral=True)
+    else:
+        await interaction.followup.send(f"✅  Ticket erstellt: {ticket.mention}", ephemeral=True)
+
+    log_ch = get_log_channel(g, "ticket")
+    if log_ch:
+        await log_ch.send(embed=fuse_embed(
+            f"{cat['emoji']}  Ticket geöffnet",
+            f"**Kategorie:** {cat['label']}\n**User:** {m.mention}\n**Kanal:** {ticket.mention}",
+            cat["color"], author=m, guild=g,
+        ))
+
+
+class TicketControlView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Schließen", style=discord.ButtonStyle.danger, emoji="🔒", custom_id="ticket_close")
+    async def close_btn(self, interaction, button):
+        await interaction.response.send_message(
+            embed=fuse_embed("🔒  Ticket schließen?",
+                             "Möchtest du dieses Ticket wirklich schließen?",
+                             ERROR_COLOR, guild=interaction.guild),
+            view=TicketCloseConfirmView(), ephemeral=False,
+        )
+
+    @discord.ui.button(label="Claim", style=discord.ButtonStyle.primary, emoji="🙋", custom_id="ticket_claim")
+    async def claim(self, interaction, button):
+        if not any(find_role(interaction.guild, rn) in interaction.user.roles for rn in STAFF_ROLE_NAMES if find_role(interaction.guild, rn)):
+            return await interaction.response.send_message("❌  Nur Staff kann Tickets claimen.", ephemeral=True)
+        await interaction.response.send_message(
+            embed=fuse_embed("🙋  Ticket übernommen",
+                             f"{interaction.user.mention} kümmert sich um dieses Ticket.",
+                             SUCCESS_COLOR, guild=interaction.guild, author=interaction.user),
+        )
+
+
+class TicketCloseConfirmView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+
+    @discord.ui.button(label="Ja, schließen", style=discord.ButtonStyle.danger, emoji="🔒")
+    async def yes(self, interaction, button):
+        await interaction.response.edit_message(
+            embed=fuse_embed("🔒  Ticket wird in 5s geschlossen…",
+                             "Transcript wird erstellt…", ERROR_COLOR, guild=interaction.guild),
+            view=None,
+        )
+        await asyncio.sleep(5)
+        try:
+            # Transcript erzeugen
+            transcript_file = None
+            try:
+                from cogs.transcripts import build_transcript
+                transcript_file = await build_transcript(interaction.channel)
             except Exception as e:
-                log.warning("send %s: %s", ch_name, e)
+                log.warning("Transcript fail: %s", e)
 
-    await _send_if_empty("📜・regelwerk",        lambda: panels.rules_panel(g))
-    await _send_if_empty("✅・verify",           lambda: panels.VerifyLayoutView(g))
-    await _send_if_empty("👋・willkommen",       lambda: panels.welcome_panel(g))
-    await _send_if_empty("❓・bewerbungs-info",  lambda: panels.bewerbungs_info_panel(g))
-    await _send_if_empty("📋・bewerbung",        lambda: panels.ApplyLayoutView(g))
-    await _send_if_empty("📖・ticket-info",      lambda: panels.ticket_info_panel(g))
-    await _send_if_empty("🎫・ticket-öffnen",    lambda: panels.TicketCategoryLayoutView(g))
-    await _send_if_empty("🔔・ankündigung",      lambda: panels.announcement_panel(g))
-    await _send_if_empty("🚀・boosts",           lambda: panels.boost_panel(g))
-    await _send_if_empty("💬・chat",             lambda: panels.chat_panel(g))
-    await _send_if_empty("🛡️・partnerschaft",    lambda: panels.partner_panel(g))
-    await _send_if_empty("👑・owner-chat",       lambda: panels.owner_chat_panel(g))
-    await _send_if_empty("⚡・admin-chat",        lambda: panels.admin_chat_panel(g))
+            # Ticket-Opener aus Channel-Topic auslesen
+            opener_id = None
+            try:
+                topic = interaction.channel.topic or ""
+                if "Ersteller:" in topic:
+                    opener_id = int(topic.split("Ersteller:")[1].strip().split()[0])
+            except Exception:
+                pass
+
+            log_ch = get_log_channel(interaction.guild, "ticket")
+            if log_ch:
+                log_emb = fuse_embed(
+                    "🔒  Ticket geschlossen",
+                    f"**Channel:** `{interaction.channel.name}`\n"
+                    f"**Geschlossen von:** {interaction.user.mention}\n"
+                    f"**Ticket-Opener:** {f'<@{opener_id}>' if opener_id else '—'}",
+                    ERROR_COLOR, guild=interaction.guild, author=interaction.user,
+                )
+                if transcript_file:
+                    await log_ch.send(embed=log_emb, file=transcript_file)
+                else:
+                    await log_ch.send(embed=log_emb)
+
+            # DM an Opener mit Transcript
+            if opener_id:
+                opener = interaction.guild.get_member(opener_id)
+                if opener:
+                    try:
+                        dm_emb = fuse_embed(
+                            "📝  Dein Ticket wurde geschlossen",
+                            f"Dein Ticket `{interaction.channel.name}` wurde von {interaction.user.mention} geschlossen.\n"
+                            "Im Anhang findest du das Transcript der Konversation.",
+                            ERROR_COLOR, guild=interaction.guild,
+                        )
+                        if transcript_file:
+                            # Neue Datei generieren (bereits konsumiert)
+                            from cogs.transcripts import build_transcript
+                            t2 = await build_transcript(interaction.channel)
+                            await opener.send(embed=dm_emb, file=t2)
+                        else:
+                            await opener.send(embed=dm_emb)
+                    except Exception: pass
+
+            await interaction.channel.delete(reason="Ticket geschlossen")
+        except Exception as e:
+            log.warning("Close fail: %s", e)
+
+    @discord.ui.button(label="Abbrechen", style=discord.ButtonStyle.secondary, emoji="✖️")
+    async def no(self, interaction, button):
+        await interaction.response.edit_message(
+            embed=fuse_embed("✖️  Abgebrochen", "Ticket bleibt offen.", INFO_COLOR, guild=interaction.guild),
+            view=None,
+        )
 
 
-# ═══════════════════════════════════════════════════════════════════ #
-# SETUP-RUNNER — sendet jetzt LayoutViews als Status
-# ═══════════════════════════════════════════════════════════════════ #
-async def safe_edit_view(msg: Optional[discord.Message], view) -> Optional[discord.Message]:
-    """Edit-Helper für LayoutViews (keine embed=, kein content=)."""
+# ─────────────────────────────────────────────────────────────────── #
+# SETUP-RUNNER
+# ─────────────────────────────────────────────────────────────────── #
+async def safe_edit(msg: Optional[discord.Message], **kw) -> Optional[discord.Message]:
     if msg is None: return None
     try:
-        # Bei LayoutView musst du content/embeds explizit nullen
-        await msg.edit(content=None, embeds=[], view=view)
+        await msg.edit(**kw)
         return msg
     except (discord.NotFound, discord.Forbidden, discord.HTTPException):
         return None
     except Exception:
         return None
 
-
-async def post_status_view(g: discord.Guild, view) -> Optional[discord.Message]:
+async def post_status(g: discord.Guild, embed: discord.Embed) -> Optional[discord.Message]:
     candidates = []
     if g.system_channel: candidates.append(g.system_channel)
     candidates.extend(g.text_channels)
@@ -813,70 +1683,60 @@ async def post_status_view(g: discord.Guild, view) -> Optional[discord.Message]:
         try:
             perms = ch.permissions_for(g.me)
             if perms.send_messages and perms.embed_links:
-                return await ch.send(view=view)
+                return await ch.send(embed=embed)
         except Exception: continue
     return None
-
 
 async def run_setup(g: discord.Guild, status_msg: Optional[discord.Message], wipe: bool) -> None:
     try:
         if wipe:
-            await safe_edit_view(status_msg, panels.status_panel(
-                "🧹", "Lösche alte Struktur…",
-                "Alle alten Kanäle und Rollen werden entfernt.",
-                color=panels.INFO_COLOR, guild=g,
-            ))
+            await safe_edit(status_msg, embed=fuse_embed("🧹  Lösche alte Struktur…", "", INFO_COLOR, guild=g))
             await wipe_server(g)
             status_msg = None
 
-        new_status = panels.status_panel(
-            "🎭", "Erstelle Rollen…",
-            "52+ Rollen werden in korrekter Hierarchie angelegt.",
-            color=panels.INFO_COLOR, guild=g,
-        )
-        status_msg = await safe_edit_view(status_msg, new_status) or status_msg
+        status_msg = await safe_edit(status_msg, embed=fuse_embed("🎭  Erstelle Rollen…", "", INFO_COLOR, guild=g)) or status_msg
         await create_roles(g)
 
-        new_status = panels.status_panel(
-            "📁", "Erstelle Kategorien & Kanäle…",
-            "Die komplette Server-Struktur wird aufgebaut.",
-            color=panels.INFO_COLOR, guild=g,
-        )
         if status_msg is None:
-            status_msg = await post_status_view(g, new_status)
+            status_msg = await post_status(g, fuse_embed("📁  Erstelle Kategorien & Kanäle…", "", INFO_COLOR, guild=g))
         else:
-            status_msg = await safe_edit_view(status_msg, new_status) or status_msg
+            status_msg = await safe_edit(status_msg, embed=fuse_embed("📁  Erstelle Kategorien & Kanäle…", "", INFO_COLOR, guild=g)) or status_msg
 
         await create_structure(g)
         await enforce_role_hierarchy(g)
 
-        new_status = panels.status_panel(
-            "💬", "Befülle wichtige Kanäle…",
-            "Regelwerk, Verify, Bewerbung & Co. werden mit Premium-Layouts ausgestattet.",
-            color=panels.INFO_COLOR, guild=g,
-        )
-        status_msg = await safe_edit_view(status_msg, new_status) or status_msg
+        status_msg = await safe_edit(status_msg, embed=fuse_embed("💬  Befülle wichtige Kanäle…", "", INFO_COLOR, guild=g)) or status_msg
         await fill_channels(g)
 
-        done = panels.setup_done_panel(
-            g,
-            n_roles=len(ROLES),
-            n_cats=len(STRUCTURE),
-            n_chans=sum(len(c['channels']) for c in STRUCTURE),
+        done = banner_embed(
+            headline="Setup abgeschlossen!",
+            subline=f"**{SERVER_NAME}** *ist komplett eingerichtet.* 🎉",
+            sections=[
+                ("📊", "Statistik",
+                 f"{BULLET_ARROW}  🎭  Rollen:        **{len(ROLES)}**\n"
+                 f"{BULLET_ARROW}  📁  Kategorien:   **{len(STRUCTURE)}**\n"
+                 f"{BULLET_ARROW}  💬  Kanäle:        **{sum(len(c['channels']) for c in STRUCTURE)}**"),
+                ("⚠️", "Wichtig",
+                 "Lasse die **Bot-Rolle** ganz oben in der Hierarchie.\n"
+                 "Nutze `!stats-setup` für Live-Counter-Channels."),
+                ("🚀", "Nächste Schritte",
+                 f"{BULLET_DOT}  `!stats-setup` für Live-Stats\n"
+                 f"{BULLET_DOT}  Slash-Commands sind nach ~1 Min aktiv\n"
+                 f"{BULLET_DOT}  Owner-Rolle dir selbst vergeben"),
+            ],
+            color=SUCCESS_COLOR, guild=g, accent="✅",
         )
-        if (await safe_edit_view(status_msg, done)) is None:
-            await post_status_view(g, done)
+        if (await safe_edit(status_msg, embed=done)) is None:
+            await post_status(g, done)
     except Exception as e:
         log.exception("Setup-Fehler")
-        err = panels.status_panel(
-            "❌", "Fehler beim Setup",
-            f"```{type(e).__name__}: {e}```",
-            color=panels.ERROR_COLOR, guild=g,
-        )
-        if (await safe_edit_view(status_msg, err)) is None:
-            await post_status_view(g, err)
+        err = fuse_embed("❌  Fehler beim Setup", f"```{type(e).__name__}: {e}```", ERROR_COLOR, guild=g)
+        if (await safe_edit(status_msg, embed=err)) is None:
+            await post_status(g, err)
 
 
+# ─────────────────────────────────────────────────────────────────── #
+# COMMANDS
 # ─────────────────────────────────────────────────────────────────── #
 COGS = [
     "cogs.automod",
@@ -915,18 +1775,11 @@ async def setup_hook():
 @bot.event
 async def on_ready():
     log.info("Eingeloggt als %s (ID: %s)", bot.user, bot.user.id)
-    # Persistente V2 Layout-Views
-    bot.add_view(panels.VerifyLayoutView())
-    bot.add_view(panels.ApplyLayoutView())
-    bot.add_view(panels.TicketCategoryLayoutView())
-    bot.add_view(panels.ApplicationDecisionLayoutView())
-    # Persistente Ticket-Control-Buttons (in einer leeren LayoutView registrieren)
-    _ticket_ctrl = discord.ui.LayoutView(timeout=None)
-    _ticket_ctrl.add_item(discord.ui.ActionRow(panels.TicketCloseButton(), panels.TicketClaimButton()))
-    bot.add_view(_ticket_ctrl)
-    _ticket_close_confirm = discord.ui.LayoutView(timeout=None)
-    _ticket_close_confirm.add_item(discord.ui.ActionRow(panels.TicketCloseConfirmYes(), panels.TicketCloseConfirmNo()))
-    bot.add_view(_ticket_close_confirm)
+    bot.add_view(VerifyView())
+    bot.add_view(ApplyView())
+    bot.add_view(TicketCategoryView())
+    bot.add_view(TicketControlView())
+    bot.add_view(ApplicationDecisionView())
     # Slash-Commands syncen
     try:
         synced = await bot.tree.sync()
@@ -939,57 +1792,73 @@ async def on_ready():
 @bot.command(name="start")
 @commands.has_permissions(administrator=True)
 async def start_cmd(ctx):
-    await ctx.send(view=panels.setup_wizard_panel(ctx.guild, ctx.author.id))
+    emb = banner_embed(
+        headline=f"{SERVER_NAME}  ❖  Setup Wizard",
+        subline="*Willkommen zum Server-Setup. Wähle unten eine Option.*",
+        sections=[
+            ("🛑", "Abbruch",
+             "Nichts tun, Wizard schließen."),
+            ("➕", "Nur Hinzufügen",
+             "Fehlende Rollen & Kanäle ergänzen — **Bestehendes bleibt**."),
+            ("♻️", "Komplett neu aufsetzen",
+             "**ALLES** löschen & neu erstellen *(mit Sicherheitsabfrage)*."),
+            ("⚠️", "Voraussetzungen",
+             f"{BULLET_ARROW}  **Bot-Rolle ganz oben** in der Hierarchie\n"
+             f"{BULLET_ARROW}  **Administrator-Rechte** erteilt"),
+        ],
+        color=BRAND_COLOR, guild=ctx.guild, accent="⚙️",
+        footer="FUSE | FS Setup  ❖  nur Admins",
+    )
+    await ctx.send(embed=emb, view=SetupView(ctx.author.id))
 
 
 @start_cmd.error
 async def start_err(ctx, error):
     if isinstance(error, commands.MissingPermissions):
-        await ctx.send(view=panels.status_panel(
-            "❌", "Keine Berechtigung",
-            "Du brauchst **Administrator**.",
-            color=panels.ERROR_COLOR, guild=ctx.guild,
-        ))
+        await ctx.send(embed=fuse_embed("❌  Keine Berechtigung",
+                                        "Du brauchst **Administrator**.", ERROR_COLOR, guild=ctx.guild))
 
 
 @bot.command(name="fix-hierarchie")
 @commands.has_permissions(administrator=True)
 async def fix_hierarchy(ctx):
     await enforce_role_hierarchy(ctx.guild)
-    await ctx.send(view=panels.status_panel(
-        "✅", "Hierarchie aktualisiert",
-        "Rollen sind jetzt in der richtigen Reihenfolge.",
-        color=panels.SUCCESS_COLOR, guild=ctx.guild,
-    ))
+    await ctx.send(embed=fuse_embed("✅  Hierarchie aktualisiert",
+                                    "Rollen sind jetzt in der richtigen Reihenfolge.",
+                                    SUCCESS_COLOR, guild=ctx.guild))
 
 
 @bot.command(name="resend-verify")
 @commands.has_permissions(administrator=True)
 async def resend_verify(ctx):
-    await ctx.send(view=panels.VerifyLayoutView(ctx.guild))
+    emb = fuse_embed("🔐  VERIFIZIERUNG", "Klicke auf den Button, um dich zu verifizieren.",
+                     SUCCESS_COLOR, guild=ctx.guild)
+    await ctx.send(embed=emb, view=VerifyView())
 
 
 @bot.command(name="resend-apply")
 @commands.has_permissions(administrator=True)
 async def resend_apply(ctx):
-    await ctx.send(view=panels.ApplyLayoutView(ctx.guild))
+    emb = fuse_embed("📋  BEWERBUNG", "Klicke unten auf **Bewerbung starten**.",
+                     BRAND_COLOR, guild=ctx.guild)
+    await ctx.send(embed=emb, view=ApplyView())
 
 
 @bot.command(name="resend-ticket")
 @commands.has_permissions(administrator=True)
 async def resend_ticket(ctx):
-    await ctx.send(view=panels.TicketCategoryLayoutView(ctx.guild))
+    emb = fuse_embed("🎫  TICKET ERÖFFNEN",
+                     "Wähle unten eine Kategorie aus.", GOLD, guild=ctx.guild)
+    await ctx.send(embed=emb, view=TicketCategoryView())
 
 
 @bot.command(name="clear-cooldown")
 @commands.has_permissions(administrator=True)
 async def clear_cd(ctx, user: discord.Member):
     clear_cooldown(user.id)
-    await ctx.send(view=panels.status_panel(
-        "✅", "Cooldown entfernt",
-        f"{user.mention} kann sich wieder bewerben.",
-        color=panels.SUCCESS_COLOR, guild=ctx.guild,
-    ))
+    await ctx.send(embed=fuse_embed("✅  Cooldown entfernt",
+                                    f"{user.mention} kann sich wieder bewerben.",
+                                    SUCCESS_COLOR, guild=ctx.guild))
 
 
 # ─────────────────────────────────────────────────────────────────── #
@@ -1005,11 +1874,25 @@ async def on_member_join(member: discord.Member):
 
     wc = discord.utils.get(g.text_channels, name="👋・willkommen")
     if wc:
-        # Ping zuerst (separate Message), dann V2-Panel
-        try:
-            await wc.send(content=member.mention, allowed_mentions=discord.AllowedMentions(users=True))
-        except Exception: pass
-        await wc.send(view=panels.welcome_join_panel(member))
+        emb = banner_embed(
+            headline=f"Willkommen in {SERVER_NAME}!",
+            subline=(
+                f"**Hey {member.mention}!** 👋\n"
+                f"*Du bist unser  **{g.member_count}. Member**  — schön dass du da bist!*"
+            ),
+            sections=[
+                ("📌", "Deine ersten Schritte",
+                 f"{BULLET_ARROW}  Lies dir das <#📜・regelwerk> durch\n"
+                 f"{BULLET_ARROW}  Verifiziere dich im <#✅・verify>\n"
+                 f"{BULLET_ARROW}  Sende deine Bewerbung im <#📋・bewerbung>"),
+                ("💎", "Sei willkommen",
+                 "*Bitte halte dich an die Regeln und geh freundlich mit allen Mitgliedern um.*\n"
+                 "**Viel Spaß bei uns!** 🎉"),
+            ],
+            color=BRAND_COLOR, guild=g, author=member, accent="🎉",
+            footer=f"User-ID: {member.id}  ❖  Account erstellt: {member.created_at.strftime('%d.%m.%Y')}",
+        )
+        await wc.send(content=member.mention, embed=emb)
 
     log_ch = get_log_channel(g, "join")
     if log_ch:
@@ -1025,7 +1908,17 @@ async def on_member_remove(member: discord.Member):
     g = member.guild
     bye = discord.utils.get(g.text_channels, name="👋・tschüss")
     if bye:
-        await bye.send(view=panels.goodbye_panel(member))
+        emb = banner_embed(
+            headline="Tschüss!",
+            subline=f"**{member}** *hat den Server verlassen.*",
+            sections=[
+                ("📊", "Aktueller Stand",
+                 f"{BULLET_DOT}  Wir sind jetzt **{g.member_count}** Member\n"
+                 f"{BULLET_DOT}  Beitritt: <t:{int(member.joined_at.timestamp())}:R>" if member.joined_at else f"Wir sind jetzt **{g.member_count}** Member"),
+            ],
+            color=ERROR_COLOR, guild=g, author=member, accent="👋",
+        )
+        await bye.send(embed=emb)
     log_ch = get_log_channel(g, "leave")
     if log_ch:
         emb = fuse_embed("📤  Member Left", f"**{member}** (`{member.id}`)", ERROR_COLOR, guild=g, author=member)
