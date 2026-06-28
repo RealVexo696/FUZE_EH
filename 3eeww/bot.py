@@ -196,61 +196,85 @@ BASIC_PERMS = discord.Permissions(
 )
 
 ROLES: list[dict] = [
-    {"name": "👑 Owner",            "color": 0xFF0000, "hoist": True, "perms": ADMIN_PERMS},
-    {"name": "👑 Co-Owner",         "color": 0xFF1A1A, "hoist": True, "perms": ADMIN_PERMS},
-    {"name": "🛡️ Server-Manager",   "color": 0xFF4500, "hoist": True, "perms": ADMIN_PERMS},
-    {"name": "⚡ Head-Admin",        "color": 0xFF6600, "hoist": True, "perms": ADMIN_PERMS},
-    {"name": "⚡ Admin",             "color": 0xFF8000, "hoist": True, "perms": ADMIN_PERMS},
-    {"name": "⚡ Vize-Admin",        "color": 0xFF9933, "hoist": True, "perms": MOD_PERMS},
-    {"name": "🔨 Head-Moderator",   "color": 0xFFAA00, "hoist": True, "perms": MOD_PERMS},
-    {"name": "🔨 Senior-Moderator", "color": 0xFFC04D, "hoist": True, "perms": MOD_PERMS},
-    {"name": "🔨 Moderator",        "color": 0xFFD580, "hoist": True, "perms": MOD_PERMS},
-    {"name": "🔨 Trial-Moderator",  "color": 0xFFE0B3, "hoist": True, "perms": TRIAL_MOD_PERMS},
-    {"name": "🎧 Support-Lead",     "color": 0x00CED1, "hoist": True, "perms": TRIAL_MOD_PERMS},
-    {"name": "🎧 Supporter",        "color": 0x40E0D0, "hoist": True, "perms": TRIAL_MOD_PERMS},
-    {"name": "🎧 Trial-Supporter",  "color": 0x7FFFD4, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💻 Developer",        "color": 0x9B59B6, "hoist": True, "perms": ADMIN_PERMS},
-    {"name": "🤖 Bot-Manager",      "color": 0x8E44AD, "hoist": True, "perms": MOD_PERMS},
-    {"name": "🎨 Designer",         "color": 0xE67E22, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🎉 Event-Manager",    "color": 0xD35400, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "📝 Recruiter",        "color": 0x16A085, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🤝 Partner-Manager",  "color": 0x1ABC9C, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "📱 SocialMedia-Team", "color": 0xE91E63, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💎 Boss",             "color": 0x800080, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💎 Underboss",        "color": 0x8B008B, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💎 Consigliere",      "color": 0x9932CC, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💎 Capo",             "color": 0xA020F0, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💎 Soldato",          "color": 0xBA55D3, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🔫 Hitman",           "color": 0x4B0082, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🔫 Enforcer",         "color": 0x483D8B, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💊 Dealer",           "color": 0x2F4F4F, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🚚 Smuggler",         "color": 0x556B2F, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🏎️ Driver",           "color": 0x6B8E23, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🔧 Mechanic",         "color": 0x808000, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🛡️ Bodyguard",        "color": 0x708090, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🏆 Veteran",          "color": 0xFFD700, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "⭐ Elite",             "color": 0xFFC125, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💠 Member+",          "color": 0x00BFFF, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💠 Member",           "color": 0x1E90FF, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🧪 Trial-Member",     "color": 0x87CEEB, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🎬 YouTuber",         "color": 0xFF0000, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🎮 Twitch-Streamer",  "color": 0x6441A5, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🎵 TikToker",         "color": 0x010101, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "🖌️ Content-Creator",  "color": 0xC71585, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "✅ Verified",         "color": 0x57F287, "hoist": False, "perms": MEMBER_PERMS},
-    {"name": "🤝 Fuse",             "color": 0xFF69B4, "hoist": False, "perms": MEMBER_PERMS},
-    {"name": "💕 Friend",           "color": 0xFFB6C1, "hoist": False, "perms": MEMBER_PERMS},
-    {"name": "🎶 DJ",               "color": 0x1DB954, "hoist": False, "perms": MEMBER_PERMS},
-    {"name": "🎂 Geburtstagskind",  "color": 0xFF69B4, "hoist": False, "perms": MEMBER_PERMS},
-    {"name": "💖 Boost-King",       "color": 0xF47FFF, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💖 Booster",          "color": 0xF47FFF, "hoist": True, "perms": MEMBER_PERMS},
-    {"name": "💎 Nitro",            "color": 0xB9BBBE, "hoist": False, "perms": MEMBER_PERMS},
-    {"name": "📝 Bewerber",         "color": 0x95A5A6, "hoist": True, "perms": BASIC_PERMS},
-    {"name": "👋 Gast",             "color": 0xBDC3C7, "hoist": False, "perms": BASIC_PERMS},
-    {"name": "😴 AFK",              "color": 0x4F545C, "hoist": False, "perms": BASIC_PERMS},
-    {"name": "🔇 Muted",            "color": 0x36393F, "hoist": False, "perms": discord.Permissions.none()},
-    {"name": "⚠️ Verwarnt",         "color": 0xE74C3C, "hoist": False, "perms": BASIC_PERMS},
-    {"name": "❌ Unverified",       "color": 0x99AAB5, "hoist": False, "perms": discord.Permissions.none()},
+    # ═══════════════════════════════════════════════
+    # ▰▰▰▰▰▰▰▰▰▰  DIVIDER  ▰▰▰▰▰▰▰▰▰▰
+    # ═══════════════════════════════════════════════
+    {"name": "▰▰▰▰▰  LEITUNG  ▰▰▰▰▰",   "color": 0x000001, "hoist": True, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "👑 Owner",                  "color": 0xFF0000, "hoist": True, "perms": ADMIN_PERMS},
+    {"name": "👑 Co-Owner",               "color": 0xFF1A1A, "hoist": True, "perms": ADMIN_PERMS},
+    {"name": "🛡️ Server-Manager",         "color": 0xFF4500, "hoist": True, "perms": ADMIN_PERMS},
+
+    {"name": "▰▰▰▰▰  ADMIN-TEAM  ▰▰▰▰▰", "color": 0x000001, "hoist": True, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "⚡ Head-Admin",              "color": 0xFF6600, "hoist": True, "perms": ADMIN_PERMS},
+    {"name": "⚡ Admin",                   "color": 0xFF8000, "hoist": True, "perms": ADMIN_PERMS},
+    {"name": "⚡ Vize-Admin",              "color": 0xFF9933, "hoist": True, "perms": MOD_PERMS},
+
+    {"name": "▰▰▰▰▰  MODERATION  ▰▰▰▰▰", "color": 0x000001, "hoist": True, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "🔨 Head-Moderator",         "color": 0xFFAA00, "hoist": True, "perms": MOD_PERMS},
+    {"name": "🔨 Senior-Moderator",       "color": 0xFFC04D, "hoist": True, "perms": MOD_PERMS},
+    {"name": "🔨 Moderator",              "color": 0xFFD580, "hoist": True, "perms": MOD_PERMS},
+    {"name": "🔨 Trial-Moderator",        "color": 0xFFE0B3, "hoist": True, "perms": TRIAL_MOD_PERMS},
+
+    {"name": "▰▰▰▰▰  SUPPORT  ▰▰▰▰▰",    "color": 0x000001, "hoist": True, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "🎧 Support-Lead",           "color": 0x00CED1, "hoist": True, "perms": TRIAL_MOD_PERMS},
+    {"name": "🎧 Supporter",              "color": 0x40E0D0, "hoist": True, "perms": TRIAL_MOD_PERMS},
+    {"name": "🎧 Trial-Supporter",        "color": 0x7FFFD4, "hoist": True, "perms": MEMBER_PERMS},
+
+    {"name": "▰▰▰▰▰  TEAM  ▰▰▰▰▰",       "color": 0x000001, "hoist": True, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "💻 Developer",              "color": 0x9B59B6, "hoist": True, "perms": ADMIN_PERMS},
+    {"name": "🤖 Bot-Manager",            "color": 0x8E44AD, "hoist": True, "perms": MOD_PERMS},
+    {"name": "🎨 Designer",               "color": 0xE67E22, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🎉 Event-Manager",          "color": 0xD35400, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "📝 Recruiter",              "color": 0x16A085, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🤝 Partner-Manager",        "color": 0x1ABC9C, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "📱 SocialMedia-Team",       "color": 0xE91E63, "hoist": True, "perms": MEMBER_PERMS},
+
+    {"name": "▰▰▰▰▰  GANG-RÄNGE  ▰▰▰▰▰", "color": 0x000001, "hoist": True, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "💎 Boss",                   "color": 0x800080, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "💎 Underboss",              "color": 0x8B008B, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "💎 Consigliere",            "color": 0x9932CC, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "💎 Capo",                   "color": 0xA020F0, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "💎 Soldato",                "color": 0xBA55D3, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🔫 Hitman",                 "color": 0x4B0082, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🔫 Enforcer",               "color": 0x483D8B, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "💊 Dealer",                 "color": 0x2F4F4F, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🚚 Smuggler",               "color": 0x556B2F, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🏎️ Driver",                 "color": 0x6B8E23, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🔧 Mechanic",               "color": 0x808000, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🛡️ Bodyguard",              "color": 0x708090, "hoist": True, "perms": MEMBER_PERMS},
+
+    {"name": "▰▰▰▰▰  MEMBER  ▰▰▰▰▰",     "color": 0x000001, "hoist": True, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "🏆 Veteran",                "color": 0xFFD700, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "⭐ Elite",                   "color": 0xFFC125, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "💠 Member+",                "color": 0x00BFFF, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "💠 Member",                 "color": 0x1E90FF, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🧪 Trial-Member",           "color": 0x87CEEB, "hoist": True, "perms": MEMBER_PERMS},
+
+    {"name": "▰▰▰▰▰  CREATOR  ▰▰▰▰▰",    "color": 0x000001, "hoist": True, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "🎬 YouTuber",               "color": 0xFF0000, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🎮 Twitch-Streamer",        "color": 0x6441A5, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🎵 TikToker",               "color": 0x010101, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "🖌️ Content-Creator",        "color": 0xC71585, "hoist": True, "perms": MEMBER_PERMS},
+
+    {"name": "▰▰▰▰▰  BOOSTS  ▰▰▰▰▰",     "color": 0x000001, "hoist": True, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "💖 Boost-King",             "color": 0xF47FFF, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "💖 Booster",                "color": 0xF47FFF, "hoist": True, "perms": MEMBER_PERMS},
+    {"name": "💎 Nitro",                  "color": 0xB9BBBE, "hoist": False, "perms": MEMBER_PERMS},
+
+    {"name": "▰▰▰▰▰  SPEZIAL  ▰▰▰▰▰",    "color": 0x000001, "hoist": False, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "✅ Verified",               "color": 0x57F287, "hoist": False, "perms": MEMBER_PERMS},
+    {"name": "🤝 Fuse",                   "color": 0xFF69B4, "hoist": False, "perms": MEMBER_PERMS},
+    {"name": "💕 Friend",                 "color": 0xFFB6C1, "hoist": False, "perms": MEMBER_PERMS},
+    {"name": "🎶 DJ",                     "color": 0x1DB954, "hoist": False, "perms": MEMBER_PERMS},
+    {"name": "🎂 Geburtstagskind",        "color": 0xFF69B4, "hoist": False, "perms": MEMBER_PERMS},
+    {"name": "📝 Bewerber",               "color": 0x95A5A6, "hoist": True, "perms": BASIC_PERMS},
+    {"name": "👋 Gast",                   "color": 0xBDC3C7, "hoist": False, "perms": BASIC_PERMS},
+    {"name": "😴 AFK",                    "color": 0x4F545C, "hoist": False, "perms": BASIC_PERMS},
+
+    {"name": "▰▰▰▰▰  STRAFEN  ▰▰▰▰▰",    "color": 0x000001, "hoist": False, "perms": discord.Permissions.none(), "divider": True},
+    {"name": "⚠️ Verwarnt",                "color": 0xE74C3C, "hoist": False, "perms": BASIC_PERMS},
+    {"name": "🔇 Muted",                  "color": 0x36393F, "hoist": False, "perms": discord.Permissions.none()},
+    {"name": "❌ Unverified",             "color": 0x99AAB5, "hoist": False, "perms": discord.Permissions.none()},
 ]
 
 KEY_ROLES = {
@@ -525,79 +549,77 @@ def build_overwrites(g: discord.Guild, visibility: str, locked: bool = False) ->
 # ─────────────────────────────────────────────────────────────────── #
 # SETUP-FUNKTIONEN
 # ─────────────────────────────────────────────────────────────────── #
-async def _safe_call(coro_factory, *, retries: int = 6, label: str = ""):
+def _sanitize_perms(g: discord.Guild, perms: discord.Permissions) -> discord.Permissions:
+    """Beschneidet Permissions auf das, was der Bot selbst hat."""
+    return discord.Permissions(perms.value & g.me.guild_permissions.value)
+
+
+async def _safe(coro_factory, *, label: str = "", retries: int = 4):
     """
-    Führt einen Discord-API-Call mit Rate-Limit-Handling aus.
-    coro_factory ist eine 0-Argument-Funktion, die EINE neue Coroutine
-    zurückgibt (damit wir bei Retry neu aufrufen können).
+    Wrapper mit Retry. Discord.py hat schon einen internen Rate-Limiter,
+    wir brauchen nur Retries für transient errors. KEINE manuellen Sleeps.
     """
     for attempt in range(1, retries + 1):
         try:
             return await coro_factory()
         except discord.HTTPException as e:
-            # 429 = Rate Limited
             if e.status == 429:
-                retry_after = float(getattr(e, "retry_after", 0)
-                                    or (e.response.headers.get("Retry-After") if e.response else 0)
-                                    or 2)
-                wait = min(retry_after + 0.2, 30)
-                log.warning("[%s] Rate-Limited – warte %.1fs (Versuch %d/%d)", label, wait, attempt, retries)
-                await asyncio.sleep(wait)
+                wait = float(getattr(e, "retry_after", 0) or 3)
+                log.warning("[%s] 429 – warte %.1fs", label, wait)
+                await asyncio.sleep(min(wait + 0.3, 30))
                 continue
             if e.code == 50013:
-                log.warning("[%s] Missing Permissions: %s", label, e)
+                log.warning("[%s] Missing Permissions", label)
                 return None
             if 500 <= (e.status or 0) < 600 and attempt < retries:
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(1)
                 continue
-            log.warning("[%s] HTTPException %s: %s", label, e.status, e)
+            log.warning("[%s] HTTP %s: %s", label, e.status, e)
             return None
         except Exception as e:
-            log.warning("[%s] Unerwarteter Fehler: %s", label, e)
+            log.warning("[%s] %s", label, e)
             return None
     return None
 
 
-def _sanitize_perms(g: discord.Guild, perms: discord.Permissions) -> discord.Permissions:
-    """Beschneidet Permissions auf das, was der Bot vergeben darf."""
-    return discord.Permissions(perms.value & g.me.guild_permissions.value)
-
-
 async def create_roles(g: discord.Guild) -> None:
-    """Erstellt alle Rollen PARALLEL (in Batches) — extrem schnell."""
+    """
+    Erstellt Rollen SEQUENTIELL ohne manuelle Sleeps.
+    discord.py's interner Rate-Limiter sorgt automatisch für korrekte Pausen.
+    Sequentiell ist hier deutlich zuverlässiger als parallel — Discord
+    bevorzugt einen Bucket-Strom statt 5 gleichzeitige Anfragen.
+    """
     bot_has_admin = g.me.guild_permissions.administrator
     to_create = [r for r in reversed(ROLES) if not find_role(g, r["name"])]
     total = len(to_create)
-    log.info("Erstelle %d Rollen parallel (Bot-Admin: %s)", total, bot_has_admin)
+    log.info("Erstelle %d Rollen (Bot-Admin: %s)", total, bot_has_admin)
 
     if not to_create:
         await enforce_role_hierarchy(g)
         return
 
-    sem = asyncio.Semaphore(5)  # 5 gleichzeitige Calls
-    counter = {"done": 0}
+    created = 0
+    for idx, role_def in enumerate(to_create, start=1):
+        name = role_def["name"]
+        perms = role_def["perms"] if bot_has_admin else _sanitize_perms(g, role_def["perms"])
+        r = await _safe(
+            lambda: g.create_role(
+                name=name,
+                color=discord.Color(role_def["color"]),
+                hoist=role_def["hoist"],
+                permissions=perms,
+                mentionable=False,
+                reason="FUSE Setup",
+            ),
+            label=f"role {name}",
+        )
+        if r is not None:
+            created += 1
+            log.info("  ✓ (%d/%d) %s", idx, total, name)
+        else:
+            log.warning("  ✗ (%d/%d) %s", idx, total, name)
 
-    async def make_role(role_def):
-        async with sem:
-            name = role_def["name"]
-            perms = role_def["perms"] if bot_has_admin else _sanitize_perms(g, role_def["perms"])
-            r = await _safe_call(
-                lambda: g.create_role(
-                    name=name, color=discord.Color(role_def["color"]),
-                    hoist=role_def["hoist"], permissions=perms,
-                    mentionable=False, reason="FUSE Setup",
-                ),
-                label=f"role {name}",
-            )
-            counter["done"] += 1
-            if r is not None:
-                log.info("  ✓ (%d/%d) Rolle '%s'", counter["done"], total, name)
-            else:
-                log.warning("  ✗ (%d/%d) Rolle '%s'", counter["done"], total, name)
-            return r
-
-    await asyncio.gather(*(make_role(rd) for rd in to_create))
-    log.info("Rollen fertig (%d)", total)
+    log.info("Rollen fertig: %d/%d", created, total)
     await enforce_role_hierarchy(g)
 
 
@@ -611,26 +633,40 @@ async def enforce_role_hierarchy(g: discord.Guild) -> None:
             if r and r < bot_top and not r.managed:
                 positions[r] = max(1, base - i)
         if positions:
-            await _safe_call(
+            await _safe(
                 lambda: g.edit_role_positions(positions=positions, reason="FUSE Hierarchie"),
                 label="role_positions",
             )
-            log.info("Rollen-Hierarchie gesetzt (%d)", len(positions))
+            log.info("Hierarchie OK (%d)", len(positions))
     except Exception as e:
         log.warning("Hierarchie nicht setzbar: %s", e)
 
 
 async def create_structure(g: discord.Guild) -> None:
-    """Erstellt Kategorien sequentiell (für Reihenfolge), Kanäle PARALLEL pro Kategorie."""
-    total_cats = len(STRUCTURE)
-    total_chs  = sum(len(c["channels"]) for c in STRUCTURE)
-    log.info("Erstelle %d Kategorien + %d Kanäle parallel", total_cats, total_chs)
+    """Sequentiell — Kategorien zuerst, dann ihre Kanäle. Kein manuelles Sleep."""
+    total_chs = sum(len(c["channels"]) for c in STRUCTURE)
+    log.info("Erstelle %d Kategorien + %d Kanäle", len(STRUCTURE), total_chs)
 
-    sem = asyncio.Semaphore(8)  # 8 gleichzeitige Channel-Calls
-    counter = {"done": 0}
+    ch_done = 0
+    for cat_def in STRUCTURE:
+        cat_name = cat_def["category"]
+        cat_vis  = cat_def["visibility"]
+        cat_ow   = build_overwrites(g, cat_vis)
+        category = find_category(g, cat_name)
 
-    async def make_channel(g, category, ch_def, cat_vis):
-        async with sem:
+        if not category:
+            category = await _safe(
+                lambda: g.create_category(cat_name, overwrites=cat_ow, reason="FUSE Setup"),
+                label=f"cat {cat_name}",
+            )
+            if category is None:
+                log.warning("Kategorie übersprungen: %s", cat_name)
+                continue
+        else:
+            await _safe(lambda: category.edit(overwrites=cat_ow), label=f"edit_cat {cat_name}")
+
+        for ch_def in cat_def["channels"]:
+            ch_done += 1
             ch_name = ch_def["name"]
             ctype   = ch_def.get("type", "text")
             ch_vis  = ch_def.get("visibility", cat_vis)
@@ -638,12 +674,11 @@ async def create_structure(g: discord.Guild) -> None:
 
             existing = find_channel(g, ch_name)
             if existing:
-                await _safe_call(
+                await _safe(
                     lambda: existing.edit(overwrites=build_overwrites(g, ch_vis, locked=locked)),
-                    label=f"edit {ch_name}",
+                    label=f"edit ch {ch_name}",
                 )
-                counter["done"] += 1
-                return
+                continue
 
             chan_ow = build_overwrites(g, ch_vis, locked=locked)
             if ctype == "text":
@@ -656,53 +691,24 @@ async def create_structure(g: discord.Guild) -> None:
                 else:
                     factory = lambda: g.create_voice_channel(ch_name, category=category, overwrites=chan_ow, reason="FUSE Setup")
             else:
-                return
+                continue
 
-            r = await _safe_call(factory, label=f"channel {ch_name}")
-            counter["done"] += 1
+            r = await _safe(factory, label=f"ch {ch_name}")
             if r is not None:
-                log.info("  ✓ (%d/%d) Kanal '%s'", counter["done"], total_chs, ch_name)
+                log.info("  ✓ (%d/%d) %s", ch_done, total_chs, ch_name)
 
-    # Kategorien parallel erstellen, dann ihre Kanäle parallel
-    async def make_category_with_channels(cat_def):
-        cat_name = cat_def["category"]
-        cat_vis  = cat_def["visibility"]
-        cat_ow   = build_overwrites(g, cat_vis)
-        category = find_category(g, cat_name)
-        if not category:
-            category = await _safe_call(
-                lambda: g.create_category(cat_name, overwrites=cat_ow, reason="FUSE Setup"),
-                label=f"category {cat_name}",
-            )
-            if category is None:
-                log.warning("Kategorie übersprungen: %s", cat_name)
-                return
-        else:
-            await _safe_call(lambda: category.edit(overwrites=cat_ow), label=f"edit_cat {cat_name}")
-
-        # Alle Kanäle dieser Kategorie parallel
-        await asyncio.gather(*(make_channel(g, category, ch, cat_vis) for ch in cat_def["channels"]))
-
-    # Alle Kategorien parallel
-    await asyncio.gather(*(make_category_with_channels(cd) for cd in STRUCTURE))
     log.info("Struktur fertig.")
 
 
 async def wipe_server(g: discord.Guild) -> None:
-    """Löscht parallel — viel schneller."""
-    log.info("Wipe startet (%d Kanäle, %d Rollen)", len(g.channels), len(g.roles))
-
-    sem = asyncio.Semaphore(10)
-    async def del_one(obj, label):
-        async with sem:
-            await _safe_call(lambda: obj.delete(reason="FUSE Reset"), label=label)
-
-    # Kanäle parallel löschen
-    await asyncio.gather(*(del_one(ch, f"del ch {ch.name}") for ch in list(g.channels)))
-
-    # Rollen parallel löschen
-    roles_to_del = [r for r in g.roles if not r.is_default() and not r.managed and r < g.me.top_role]
-    await asyncio.gather(*(del_one(r, f"del role {r.name}") for r in roles_to_del))
+    """Sequentiell. discord.py rate-limited automatisch."""
+    log.info("Wipe: %d Kanäle, %d Rollen", len(g.channels), len(g.roles))
+    for ch in list(g.channels):
+        await _safe(lambda: ch.delete(reason="FUSE Reset"), label=f"del ch {ch.name}")
+    for r in list(g.roles):
+        if r.is_default() or r.managed or r >= g.me.top_role:
+            continue
+        await _safe(lambda: r.delete(reason="FUSE Reset"), label=f"del role {r.name}")
     log.info("Wipe abgeschlossen.")
 
 
