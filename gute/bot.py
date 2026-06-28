@@ -97,60 +97,17 @@ def clear_cooldown(user_id: int) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────── #
-# EINHEITLICHE EMBEDS
+# EINHEITLICHE EMBEDS — jetzt aus utils.py (Premium Engine v2)
 # ─────────────────────────────────────────────────────────────────── #
-def fuse_embed(
-    title: str = "",
-    description: str = "",
-    color: int = BRAND_COLOR,
-    *,
-    author: Optional[discord.abc.User] = None,
-    author_name: Optional[str] = None,
-    author_icon: Optional[str] = None,
-    thumbnail: Optional[str] = None,
-    footer: Optional[str] = None,
-    footer_icon: Optional[str] = None,
-    guild: Optional[discord.Guild] = None,
-    color_strip: bool = True,
-    timestamp: bool = True,
-) -> discord.Embed:
-    """
-    Erstellt ein einheitliches FUSE-Embed:
-    - Author (Server-Name oder User)
-    - Optionales Thumbnail
-    - Color-Bar als Image (unten)
-    - Footer mit Brand
-    """
-    emb = discord.Embed(
-        title=title or None,
-        description=description or None,
-        color=color,
-        timestamp=datetime.utcnow() if timestamp else None,
-    )
+from utils import (
+    fuse_embed, banner_embed, success_embed, error_embed, info_embed,
+    quote, big_quote, section, kv,
+    DIVIDER, SOFT_DIVIDER, DOTS, SECTION, INVISIBLE,
+    BULLET_ARROW, BULLET_DIAMOND, BULLET_STAR, BULLET_DOT, BULLET_GEM,
+    color_bar, color_banner,
+)
 
-    # Author
-    if author:
-        emb.set_author(
-            name=str(author),
-            icon_url=author.display_avatar.url,
-        )
-    else:
-        icon = author_icon or (guild.icon.url if (guild and guild.icon) else None)
-        emb.set_author(name=author_name or SERVER_NAME, icon_url=icon)
-
-    if thumbnail:
-        emb.set_thumbnail(url=thumbnail)
-    elif guild and guild.icon:
-        emb.set_thumbnail(url=guild.icon.url)
-
-    if color_strip:
-        emb.set_image(url=color_bar(color))
-
-    emb.set_footer(
-        text=footer or f"{SERVER_NAME}  •  Roblox Roleplay Community",
-        icon_url=footer_icon or (guild.icon.url if (guild and guild.icon) else None),
-    )
-    return emb
+LINE = DIVIDER  # Backwards-Compat für alte Aufrufe
 
 
 # ─────────────────────────────────────────────────────────────────── #
@@ -701,155 +658,215 @@ async def wipe_server(g: discord.Guild) -> None:
 # KANAL-INHALTE
 # ─────────────────────────────────────────────────────────────────── #
 async def fill_channels(g: discord.Guild) -> None:
-    # ── Regelwerk ───────────────────────────────────────────────
+    # ════════════════════════════════════════════════════════════════
+    # 📜 REGELWERK
+    # ════════════════════════════════════════════════════════════════
     rules_ch = discord.utils.get(g.text_channels, name="📜・regelwerk")
     if rules_ch and not [m async for m in rules_ch.history(limit=1)]:
-        emb = fuse_embed(
-            title=f"📜  REGELWERK  •  {SERVER_NAME}",
-            description=(
-                f"### Willkommen in unserer Familie 💎\n"
-                f"Bitte lies dir die folgenden Regeln **sorgfältig** durch.\n"
-                f"Mit dem **Verify** akzeptierst du sie automatisch.\n\n"
-                f"*Dieser Server ist ausschließlich für **Roblox-Roleplay** — "
-                f"nichts davon hat einen Real-Life-Bezug.*"
+        # Header-Embed
+        header = banner_embed(
+            headline="Regelwerk",
+            subline=(
+                f"**Willkommen in unserer Familie.** ❖\n"
+                f"*Diese Regeln gelten für **jeden** auf **{SERVER_NAME}** — ohne Ausnahme.*\n"
+                f"*Mit deinem **Verify** akzeptierst du sie automatisch.*"
             ),
-            color=BRAND_COLOR, guild=g,
+            sections=[
+                ("📖", "Wichtig",
+                 "Dieser Server ist **ausschließlich** für Roblox-Roleplay & Notruf-Hamburg gedacht.\n"
+                 "**Nichts** davon hat einen Real-Life-Bezug."),
+            ],
+            color=BRAND_COLOR, guild=g, accent="📜",
         )
-        rules = [
-            ("🤝", "§1  Respekt",        "Behandle jedes Mitglied freundlich. Keine Beleidigungen, kein Mobbing, kein Rassismus."),
-            ("🔇", "§2  Kein Spam",      "Kein Spammen von Nachrichten, Pings, Emojis oder Reaktionen."),
-            ("📢", "§3  Keine Werbung",  "Werbung jeglicher Art ist **ohne Erlaubnis verboten**."),
-            ("🔞", "§4  NSFW",           "NSFW-, Gore- oder anstößige Inhalte sind **strikt untersagt**."),
-            ("📜", "§5  Discord-ToS",    "Die [Discord Richtlinien](https://discord.com/terms) gelten jederzeit."),
-            ("💬", "§6  Channel-Themen", "Halte dich an die Themen der Kanäle. Off-Topic gehört in den Chat."),
-            ("🎭", "§7  Roleplay",       "In RP-Kanälen wird **im Charakter** geschrieben. Kein OOC."),
-            ("🛡️", "§8  Team",            "Anweisungen des Teams sind ohne Diskussion zu befolgen."),
-            ("🐛", "§9  Bugs",           "Bekannte Bugs melden — **niemals** ausnutzen."),
-            ("🔐", "§10 Account",        "Teile keine Accountdaten. Phishing = sofortiger Bann."),
-            ("🎮", "§11 Roblox-Only",    "Dieser Server ist ausschließlich Roblox-Roleplay."),
-            ("⚖️", "§12 Strafen",         "Verstöße = Verwarnung, Mute, Kick oder Bann."),
-        ]
-        for emoji, name, desc in rules:
-            emb.add_field(name=f"{emoji}  {name}", value=f"> {desc}", inline=False)
-        await rules_ch.send(embed=emb)
+        await rules_ch.send(embed=header)
 
-    # ── Verify ──────────────────────────────────────────────────
+        # Regeln aufgesplittet in 2 Embeds für maximale Lesbarkeit
+        rules_a = [
+            ("🤝", "§1  Respekt",
+             "Behandle jedes Mitglied **freundlich**.\nKeine Beleidigungen, kein Mobbing, kein Rassismus, kein Sexismus."),
+            ("🔇", "§2  Kein Spam",
+             "Kein Spammen von Nachrichten, Pings, Emojis oder Reaktionen.\nHalte den Chat sauber & lesbar."),
+            ("📢", "§3  Werbung",
+             "Werbung jeglicher Art (DM oder Channel) ist **ohne Erlaubnis verboten**.\nBei Interesse → Ticket eröffnen."),
+            ("🔞", "§4  NSFW",
+             "NSFW-, Gore- oder anstößige Inhalte sind **strikt untersagt**.\nVerstöße = sofortiger Bann."),
+            ("📜", "§5  Discord-ToS",
+             "Die [Discord Richtlinien](https://discord.com/terms) gelten **jederzeit**.\nDazu gehören u.a. Mindestalter, Datenschutz, Selfbots."),
+            ("💬", "§6  Channel-Themen",
+             "Halte dich an die Themen der jeweiligen Kanäle.\nOff-Topic gehört in <#💬・chat>."),
+        ]
+        rules_b = [
+            ("🎭", "§7  Roleplay",
+             "In RP-Kanälen wird **im Charakter** geschrieben.\nKeine OOC-Diskussionen mitten im RP."),
+            ("🛡️", "§8  Team-Anweisungen",
+             "Anweisungen des Teams sind **ohne Diskussion** zu befolgen.\nBeschwerden via Ticket."),
+            ("🐛", "§9  Bugs / Exploits",
+             "Bekannte Bugs melden — **niemals ausnutzen**.\nExploits = permanenter Bann."),
+            ("🔐", "§10  Account-Sicherheit",
+             "Teile **keine** Account-Daten.\nPhishing-Links → **sofortiger Bann**, kein Pardon."),
+            ("🎮", "§11  Roblox-Only",
+             "Dieser Server ist ausschließlich **Roblox-Roleplay**.\nKein Real-Life-Drama hier."),
+            ("⚖️", "§12  Strafkatalog",
+             "Verstöße werden mit **Verwarnung → Mute → Kick → Bann** sanktioniert.\n3 Warns = 1h Mute, 5 Warns = Auto-Ban."),
+        ]
+
+        body_a = banner_embed(
+            headline="Regeln  §1 – §6",
+            subline="*Allgemeine Verhaltensregeln*",
+            sections=[(e, t, b) for e, t, b in rules_a],
+            color=BRAND_COLOR, guild=g, accent="📋",
+        )
+        body_b = banner_embed(
+            headline="Regeln  §7 – §12",
+            subline="*RP, Sicherheit & Konsequenzen*",
+            sections=[(e, t, b) for e, t, b in rules_b],
+            color=BRAND_COLOR, guild=g, accent="⚖️",
+            footer="Verstöße werden konsequent geahndet  ❖  FUSE | FS",
+        )
+        await rules_ch.send(embed=body_a)
+        await rules_ch.send(embed=body_b)
+
+    # ════════════════════════════════════════════════════════════════
+    # 🔐 VERIFY
+    # ════════════════════════════════════════════════════════════════
     verify_ch = discord.utils.get(g.text_channels, name="✅・verify")
     if verify_ch and not [m async for m in verify_ch.history(limit=1)]:
-        emb = fuse_embed(
-            title="🔐  VERIFIZIERUNG",
-            description=(
-                f"### 👋  Willkommen bei **{SERVER_NAME}**!\n\n"
-                f"Bevor du den vollen Server erkunden kannst, musst du dich kurz verifizieren.\n"
-                f"Damit bestätigst du, dass du das <#📜・regelwerk> gelesen hast.\n\n"
-                f"**🔽  So funktioniert's:**\n"
-                f"`1.` Klicke unten auf **✅  Verifizieren**\n"
-                f"`2.` Du erhältst sofort Zugriff auf den **Bewerbungs-Bereich**\n"
-                f"`3.` Sende deine Bewerbung ab und warte auf das Team\n"
-                f"`4.` Nach Annahme bist du **Member** und siehst alles 🎉"
+        emb = banner_embed(
+            headline="Verifizierung",
+            subline=(
+                f"**Willkommen bei {SERVER_NAME}!** 👋\n"
+                f"*Damit du den vollen Server erkunden kannst, musst du dich kurz verifizieren.*"
             ),
-            color=SUCCESS_COLOR, guild=g,
+            sections=[
+                ("🔽", "So funktioniert's",
+                 "**1.**  Klicke unten auf  **✅ Verifizieren**\n"
+                 "**2.**  Du erhältst sofort Zugriff auf den **Bewerbungs-Bereich**\n"
+                 "**3.**  Sende deine Bewerbung ab\n"
+                 "**4.**  Nach Annahme bist du **Member** & siehst alles 🎉"),
+                ("📜", "Mit dem Klick bestätigst du",
+                 "*…dass du das* <#📜・regelwerk> *gelesen & akzeptiert hast.*"),
+            ],
+            color=SUCCESS_COLOR, guild=g, accent="🔐",
+            footer="Sicheres Verify-System  ❖  Premium",
         )
         await verify_ch.send(embed=emb, view=VerifyView())
 
-    # ── Willkommen-Info ────────────────────────────────────────
+    # ════════════════════════════════════════════════════════════════
+    # 👋 WILLKOMMEN-INFO
+    # ════════════════════════════════════════════════════════════════
     welcome_ch = discord.utils.get(g.text_channels, name="👋・willkommen")
     if welcome_ch and not [m async for m in welcome_ch.history(limit=1)]:
-        emb = fuse_embed(
-            title=f"🎉  WILLKOMMEN AUF {SERVER_NAME.upper()}",
-            description=(
-                f"### 💎  Roblox  ✘  Roleplay  ✘  Crime-Gang\n\n"
-                f"Schön dass du den Weg zu uns gefunden hast!\n"
-                f"Wir sind eine **aktive Community** rund um Roblox-Roleplay & Notruf Hamburg.\n\n"
-                f"**📌  Was du tun musst:**\n"
-                f"➤  Lies dir das <#📜・regelwerk> durch\n"
-                f"➤  Verifiziere dich im <#✅・verify>\n"
-                f"➤  Sende deine Bewerbung im <#📋・bewerbung>\n"
-                f"➤  Werde **Member** & erlebe die volle Community"
+        emb = banner_embed(
+            headline=f"Willkommen auf {SERVER_NAME}",
+            subline=(
+                "**Roblox  ✘  Roleplay  ✘  Crime-Gang** 💎\n"
+                "*Schön dass du den Weg zu uns gefunden hast.*\n"
+                "*Wir sind eine aktive Community rund um Roblox-RP & Notruf Hamburg.*"
             ),
-            color=BRAND_COLOR, guild=g,
+            sections=[
+                ("📌", "Deine ersten Schritte",
+                 f"{BULLET_ARROW}  Lies dir das <#📜・regelwerk> durch\n"
+                 f"{BULLET_ARROW}  Verifiziere dich im <#✅・verify>\n"
+                 f"{BULLET_ARROW}  Sende deine Bewerbung im <#📋・bewerbung>\n"
+                 f"{BULLET_ARROW}  Werde **Member** & erlebe die volle Community"),
+                ("💎", "Was dich erwartet",
+                 f"{BULLET_STAR}  Aktive Voice- & Chat-Community\n"
+                 f"{BULLET_STAR}  Events, Giveaways & Meetings\n"
+                 f"{BULLET_STAR}  Eigenes Roleplay-System\n"
+                 f"{BULLET_STAR}  Faires & freundliches Team"),
+            ],
+            color=BRAND_COLOR, guild=g, accent="🎉",
         )
         await welcome_ch.send(embed=emb)
 
-    # ── Bewerbungs-Info ────────────────────────────────────────
+    # ════════════════════════════════════════════════════════════════
+    # 📖 BEWERBUNGS-INFOS
+    # ════════════════════════════════════════════════════════════════
     binfo_ch = discord.utils.get(g.text_channels, name="❓・bewerbungs-info")
     if binfo_ch and not [m async for m in binfo_ch.history(limit=1)]:
-        emb = fuse_embed(
-            title="📖  BEWERBUNGS-INFOS",
-            description="### So läuft deine Bewerbung ab:",
-            color=INFO_COLOR, guild=g,
-        )
-        emb.add_field(
-            name="📝  Schritt 1  —  Formular",
-            value=("> Gehe in den Kanal <#📋・bewerbung> und klicke\n"
-                   "> auf **📋  Bewerbung starten**."),
-            inline=False,
-        )
-        emb.add_field(
-            name="⏳  Schritt 2  —  Warten",
-            value=("> Das Team prüft deine Bewerbung — meist innerhalb\n"
-                   "> von **24 – 48 Stunden**."),
-            inline=False,
-        )
-        emb.add_field(
-            name="✅  Schritt 3  —  Annahme",
-            value=("> Wirst du angenommen, bekommst du automatisch die\n"
-                   "> **💠 Member**-Rolle und vollen Zugriff."),
-            inline=False,
-        )
-        emb.add_field(
-            name="❌  Schritt 4  —  Ablehnung",
-            value=("> Bei Ablehnung gibt es eine **30 Min Sperre**\n"
-                   f"> bevor du eine neue Bewerbung senden kannst."),
-            inline=False,
+        emb = banner_embed(
+            headline="Bewerbungs-Ablauf",
+            subline="*So läuft deine Bewerbung ab — Schritt für Schritt.*",
+            sections=[
+                ("📝", "Schritt 1  —  Formular",
+                 "Gehe in <#📋・bewerbung> und klicke auf\n**📋 Bewerbung starten**."),
+                ("⏳", "Schritt 2  —  Warten",
+                 "Das Team prüft deine Bewerbung — meist innerhalb von\n**24 – 48 Stunden**."),
+                ("✅", "Schritt 3  —  Annahme",
+                 "Wirst du angenommen, bekommst du automatisch die\n**💠 Member**-Rolle und **vollen Zugriff**."),
+                ("❌", "Schritt 4  —  Ablehnung",
+                 "Bei Ablehnung gibt es eine **30 Min Sperre** bevor\ndu eine neue Bewerbung senden kannst.\nDu bekommst eine **DM mit Begründung**."),
+            ],
+            color=INFO_COLOR, guild=g, accent="📖",
         )
         await binfo_ch.send(embed=emb)
 
-    # ── Bewerbung (Button) ─────────────────────────────────────
+    # ════════════════════════════════════════════════════════════════
+    # 📋 BEWERBUNG (Button)
+    # ════════════════════════════════════════════════════════════════
     bewerb_ch = discord.utils.get(g.text_channels, name="📋・bewerbung")
     if bewerb_ch and not [m async for m in bewerb_ch.history(limit=1)]:
-        emb = fuse_embed(
-            title="📋  BEWERBUNG  •  FUSE | FS",
-            description=(
-                f"### 🎯  Du möchtest **Member** werden?\n\n"
-                f"Klicke unten auf **📋  Bewerbung starten** — es öffnet sich ein Formular.\n"
-                f"Beantworte alle Fragen ehrlich und ausführlich.\n\n"
-                f"**📌  Wichtig:**\n"
-                f"➤  Pro Bewerbung **1 Versuch**\n"
-                f"➤  Bei Ablehnung **30 Min** Sperre\n"
-                f"➤  Bei Annahme: sofort **Member** 🎉"
+        emb = banner_embed(
+            headline="Bewerbung",
+            subline=(
+                "**Du möchtest Member werden?** 🎯\n"
+                "*Klicke unten auf  **📋 Bewerbung starten**  — es öffnet sich ein Formular.\n"
+                "Beantworte alle Fragen ehrlich und ausführlich.*"
             ),
-            color=BRAND_COLOR, guild=g,
+            sections=[
+                ("📌", "Wichtige Hinweise",
+                 f"{BULLET_ARROW}  Pro Versuch **1 Bewerbung**\n"
+                 f"{BULLET_ARROW}  Bei Ablehnung: **30 Min Sperre**\n"
+                 f"{BULLET_ARROW}  Bei Annahme: **sofort Member** 🎉"),
+                ("⏱️", "Bearbeitungszeit",
+                 "In der Regel  **24 – 48 Stunden**.\n"
+                 "Bei längerer Bearbeitung pingt der Bot automatisch das Recruiter-Team."),
+            ],
+            color=BRAND_COLOR, guild=g, accent="📋",
         )
         await bewerb_ch.send(embed=emb, view=ApplyView())
 
-    # ── Ticket-Info ────────────────────────────────────────────
+    # ════════════════════════════════════════════════════════════════
+    # 📖 TICKET-INFO
+    # ════════════════════════════════════════════════════════════════
     tinfo_ch = discord.utils.get(g.text_channels, name="📖・ticket-info")
     if tinfo_ch and not [m async for m in tinfo_ch.history(limit=1)]:
-        emb = fuse_embed(
-            title="📖  TICKET-SYSTEM  •  INFOS",
-            description="### Wofür kannst du ein Ticket öffnen?",
-            color=GOLD, guild=g,
+        emb = banner_embed(
+            headline="Ticket-System",
+            subline="*Wofür kannst du ein Ticket öffnen?*",
+            sections=[
+                ("❓", "Allgemeine Frage",   "Du hast eine Frage rund um den Server."),
+                ("🐛", "Problem / Bug",      "Etwas funktioniert nicht oder ist kaputt."),
+                ("🚨", "Player-Meldung",     "Ein anderer Spieler verstößt gegen Regeln.\n*(Modal mit Wer/Was/Beweise)*"),
+                ("🤝", "Partnerschaft",      "Du möchtest eine Partnerschaft anfragen."),
+                ("💎", "Sonstiges",          "Alles was nicht in andere Kategorien passt."),
+            ],
+            color=GOLD, guild=g, accent="📖",
         )
-        emb.add_field(name="❓  Allgemeine Frage", value="> Du hast eine Frage rund um den Server.", inline=False)
-        emb.add_field(name="🐛  Problem / Bug",    value="> Etwas funktioniert nicht oder ist kaputt.", inline=False)
-        emb.add_field(name="🚨  Player-Meldung",   value="> Ein anderer Spieler verstößt gegen Regeln.", inline=False)
-        emb.add_field(name="🤝  Partnerschaft",    value="> Du möchtest eine Partnerschaft anfragen.", inline=False)
-        emb.add_field(name="💎  Sonstiges",        value="> Anliegen, die nicht in andere Kategorien passen.", inline=False)
         await tinfo_ch.send(embed=emb)
 
-    # ── Ticket öffnen (Select) ─────────────────────────────────
+    # ════════════════════════════════════════════════════════════════
+    # 🎫 TICKET ERÖFFNEN (Select)
+    # ════════════════════════════════════════════════════════════════
     ticket_ch = discord.utils.get(g.text_channels, name="🎫・ticket-öffnen")
     if ticket_ch and not [m async for m in ticket_ch.history(limit=1)]:
-        emb = fuse_embed(
-            title="🎫  TICKET ERÖFFNEN",
-            description=(
-                f"### 💬  Brauchst du Hilfe?\n\n"
-                f"Wähle unten eine **Kategorie** aus dem Menü.\n"
-                f"Es wird ein privater Kanal für dich und das Team erstellt.\n\n"
-                f"⚠️  *Missbrauch des Ticket-Systems wird sanktioniert.*"
+        emb = banner_embed(
+            headline="Ticket eröffnen",
+            subline=(
+                "**Brauchst du Hilfe?** 💬\n"
+                "*Wähle unten eine **Kategorie** aus dem Menü.\n"
+                "Es wird ein privater Kanal für dich und das Team erstellt.*"
             ),
-            color=GOLD, guild=g,
+            sections=[
+                ("⚡", "Was passiert",
+                 f"{BULLET_DOT}  Eigener privater Kanal für dich\n"
+                 f"{BULLET_DOT}  Nur du & das Team können ihn sehen\n"
+                 f"{BULLET_DOT}  Beim Schließen: **HTML-Transcript** per DM"),
+                ("⚠️", "Hinweis",
+                 "*Missbrauch des Ticket-Systems wird sanktioniert.\n"
+                 "Pro User maximal **1 offenes Ticket pro Kategorie**.*"),
+            ],
+            color=GOLD, guild=g, accent="🎫",
         )
         await ticket_ch.send(embed=emb, view=TicketCategoryView())
 
@@ -978,12 +995,19 @@ class VerifyView(discord.ui.View):
             if unv and unv in m.roles: await m.remove_roles(unv, reason="Verify")
             if ver:                    await m.add_roles(ver, reason="Verify")
             if bew:                    await m.add_roles(bew, reason="Verify -> Bewerber")
-            emb = fuse_embed(
-                "🎉  Verifizierung erfolgreich!",
-                f"Willkommen, {m.mention}!\n\n"
-                "Du hast nun Zugriff auf den **Bewerbungs-Bereich**.\n"
-                "Gehe in <#📋・bewerbung> und klicke auf **📋  Bewerbung starten**.",
-                SUCCESS_COLOR, guild=g, author=m,
+            emb = banner_embed(
+                headline="Verifizierung erfolgreich!",
+                subline=f"**Willkommen, {m.mention}!** 🎉",
+                sections=[
+                    ("✅", "Du hast jetzt Zugriff auf",
+                     f"{BULLET_ARROW}  <#📋・bewerbung>\n"
+                     f"{BULLET_ARROW}  <#❓・bewerbungs-info>\n"
+                     f"{BULLET_ARROW}  <#🎙️・warteraum> *(Voice)*"),
+                    ("📋", "Dein nächster Schritt",
+                     "Gehe in <#📋・bewerbung> und klicke auf  **📋 Bewerbung starten**.\n"
+                     "*Beantworte das Formular ehrlich — viel Erfolg!* 🍀"),
+                ],
+                color=SUCCESS_COLOR, guild=g, author=m, accent="🎉",
             )
             await interaction.response.send_message(embed=emb, ephemeral=True)
             log_ch = get_log_channel(g, "verify")
@@ -1039,18 +1063,24 @@ class ApplicationModal(discord.ui.Modal, title="📋 FUSE | FS — Bewerbung"):
                 "❌  Bewerbungs-Log-Kanal nicht gefunden. Bitte Admin informieren.", ephemeral=True,
             )
 
-        emb = fuse_embed(
-            title="📨  NEUE BEWERBUNG EINGEGANGEN",
-            description=f"Eine neue Bewerbung von {m.mention} liegt zur Prüfung bereit.",
-            color=INFO_COLOR, guild=g, author=m,
+        emb = banner_embed(
+            headline="Neue Bewerbung",
+            subline=(
+                f"**Bewerber:** {m.mention}\n"
+                f"*Eine neue Bewerbung liegt zur Prüfung bereit.*"
+            ),
+            sections=[],  # wir fügen Felder unten an
+            color=INFO_COLOR, guild=g, author=m, accent="📨",
         )
-        emb.add_field(name="👤  Roblox-Name & Alter",  value=f"```{self.roblox_name.value}```", inline=False)
-        emb.add_field(name="🎮  RP-Erfahrung",          value=f"```{self.experience.value}```", inline=False)
-        emb.add_field(name="💡  Warum FUSE?",            value=f"```{self.why_fuse.value}```", inline=False)
-        emb.add_field(name="🎯  Was bietest du uns?",   value=f"```{self.offer.value}```", inline=False)
-        emb.add_field(name="⏱️  Aktivität & Mikrofon",   value=f"```{self.activity.value}```", inline=False)
-        emb.add_field(name="🆔  User-ID",                value=f"`{m.id}`", inline=True)
-        emb.add_field(name="📅  Account erstellt",       value=f"<t:{int(m.created_at.timestamp())}:R>", inline=True)
+        emb.add_field(name=f"👤  Roblox-Name & Alter",     value=f">>> {self.roblox_name.value}", inline=False)
+        emb.add_field(name=f"🎮  RP-Erfahrung",             value=f">>> {self.experience.value}",  inline=False)
+        emb.add_field(name=f"💡  Warum FUSE?",               value=f">>> {self.why_fuse.value}",    inline=False)
+        emb.add_field(name=f"🎯  Was bietest du uns?",      value=f">>> {self.offer.value}",       inline=False)
+        emb.add_field(name=f"⏱️  Aktivität & Mikrofon",      value=f">>> {self.activity.value}",    inline=False)
+        emb.add_field(name=f"\u200b",                       value=DIVIDER,                          inline=False)
+        emb.add_field(name=f"🆔  User-ID",                  value=f"`{m.id}`",                                         inline=True)
+        emb.add_field(name=f"📅  Account",                  value=f"<t:{int(m.created_at.timestamp())}:R>",            inline=True)
+        emb.add_field(name=f"👥  Member-Count",             value=f"`{g.member_count}`",                               inline=True)
         # ID auch im Footer speichern (für persistente Buttons nach Bot-Restart)
         emb.set_footer(text=f"Bewerber-ID: {m.id}  •  {SERVER_NAME}",
                        icon_url=g.icon.url if g.icon else None)
@@ -1070,14 +1100,17 @@ class ApplicationModal(discord.ui.Modal, title="📋 FUSE | FS — Bewerbung"):
 
         # Bestätigung an User
         await interaction.response.send_message(
-            embed=fuse_embed(
-                title="✅  Bewerbung erfolgreich abgeschickt!",
-                description=(
-                    "Deine Bewerbung wurde an das Team weitergeleitet.\n\n"
-                    "**⏱️  Bearbeitungszeit:** in der Regel **24 – 48 Stunden**.\n"
-                    "Du bekommst hier eine Benachrichtigung sobald entschieden wurde."
-                ),
-                color=SUCCESS_COLOR, guild=g, author=m,
+            embed=banner_embed(
+                headline="Bewerbung abgeschickt!",
+                subline="*Deine Bewerbung wurde an das Team weitergeleitet.* ✅",
+                sections=[
+                    ("⏱️", "Bearbeitungszeit",
+                     "In der Regel  **24 – 48 Stunden**.\n"
+                     "Du bekommst eine **DM** sobald entschieden wurde."),
+                    ("💡", "Tipp",
+                     "Halte Discord-DMs für unseren Bot **offen**, damit du benachrichtigt wirst."),
+                ],
+                color=SUCCESS_COLOR, guild=g, author=m, accent="✅",
             ),
             ephemeral=True,
         )
@@ -1104,14 +1137,17 @@ class ApplyView(discord.ui.View):
         cd = get_cooldown(m.id)
         if cd and cd > datetime.now(timezone.utc):
             return await interaction.response.send_message(
-                embed=fuse_embed(
-                    title="⏳  Du bist gesperrt",
-                    description=(
-                        f"Deine letzte Bewerbung wurde abgelehnt.\n\n"
-                        f"**Du kannst dich erneut bewerben:** <t:{int(cd.timestamp())}:R>\n"
-                        f"(<t:{int(cd.timestamp())}:F>)"
-                    ),
-                    color=ERROR_COLOR, guild=g, author=m,
+                embed=banner_embed(
+                    headline="Du bist gesperrt",
+                    subline="*Deine letzte Bewerbung wurde abgelehnt.*",
+                    sections=[
+                        ("⏳", "Wieder möglich",
+                         f"{BULLET_ARROW}  <t:{int(cd.timestamp())}:R>\n"
+                         f"{BULLET_ARROW}  <t:{int(cd.timestamp())}:F>"),
+                        ("💡", "Tipp",
+                         "Nutze die Zeit um deine Antworten besser vorzubereiten!"),
+                    ],
+                    color=ERROR_COLOR, guild=g, author=m, accent="⏳",
                 ),
                 ephemeral=True,
             )
@@ -1185,14 +1221,19 @@ class ApplicationDecisionView(discord.ui.View):
 
         # User benachrichtigen
         try:
-            dm = fuse_embed(
-                title="🎉  Deine Bewerbung wurde angenommen!",
-                description=(
-                    f"Glückwunsch! Du bist jetzt **Member** auf **{SERVER_NAME}**.\n"
-                    f"Du hast jetzt vollen Zugriff auf die Community.\n\n"
-                    f"Viel Spaß! 💎"
-                ),
-                color=SUCCESS_COLOR, guild=g, author=applicant,
+            dm = banner_embed(
+                headline="Bewerbung angenommen!",
+                subline=f"**Glückwunsch, {applicant.mention}!** 🎉",
+                sections=[
+                    ("💎", "Du bist jetzt Member",
+                     f"Du hast jetzt **vollen Zugriff** auf **{SERVER_NAME}**.\n"
+                     f"Erkunde die Community, lerne andere kennen, hab Spaß!"),
+                    ("📌", "Empfohlene Kanäle",
+                     f"{BULLET_ARROW}  <#💬・chat> — quatschen\n"
+                     f"{BULLET_ARROW}  <#🔔・ankündigung> — News\n"
+                     f"{BULLET_ARROW}  <#🎫・ticket-öffnen> — bei Fragen"),
+                ],
+                color=SUCCESS_COLOR, guild=g, author=applicant, accent="🎉",
             )
             await applicant.send(embed=dm)
         except Exception:
@@ -1260,15 +1301,20 @@ class DenyReasonModal(discord.ui.Modal, title="❌ Bewerbung ablehnen"):
         # User benachrichtigen
         if applicant:
             try:
-                dm = fuse_embed(
-                    title="❌  Deine Bewerbung wurde abgelehnt",
-                    description=(
-                        f"Leider wurde deine Bewerbung bei **{SERVER_NAME}** abgelehnt.\n\n"
-                        f"**📝  Begründung:**\n```{self.reason.value}```\n"
-                        f"**⏳  Sperre:** Du kannst dich in **{APPLY_COOLDOWN_MIN} Minuten** erneut bewerben.\n"
-                        f"Wieder möglich: <t:{int(until.timestamp())}:R>"
-                    ),
-                    color=ERROR_COLOR, guild=g, author=applicant,
+                dm = banner_embed(
+                    headline="Bewerbung abgelehnt",
+                    subline=f"*Leider wurde deine Bewerbung bei **{SERVER_NAME}** abgelehnt.*",
+                    sections=[
+                        ("📝", "Begründung",
+                         f"```{self.reason.value}```"),
+                        ("⏳", "Sperre",
+                         f"Du kannst dich in  **{APPLY_COOLDOWN_MIN} Minuten**  erneut bewerben.\n"
+                         f"Wieder möglich:  <t:{int(until.timestamp())}:R>  *(*<t:{int(until.timestamp())}:F>*)*"),
+                        ("💡", "Tipp",
+                         "Beantworte die Fragen beim nächsten Mal **ausführlicher** und gehe genauer\n"
+                         "auf deine RP-Erfahrung & Motivation ein."),
+                    ],
+                    color=ERROR_COLOR, guild=g, author=applicant, accent="❌",
                 )
                 await applicant.send(embed=dm)
             except Exception:
@@ -1375,15 +1421,23 @@ async def create_ticket(interaction: discord.Interaction, cat_key: str,
         reason=f"Ticket: {cat['label']}",
     )
 
-    emb = fuse_embed(
-        title=f"{cat['emoji']}  TICKET  •  {cat['label']}",
-        description=(
-            f"Hallo {m.mention},\n"
-            f"vielen Dank für dein Anliegen — ein Team-Mitglied meldet sich gleich.\n\n"
-            f"**📝  Bitte beschreibe dein Anliegen so genau wie möglich.**\n"
-            f"Füge Screenshots, Beweise oder Links bei wenn relevant."
-        ),
-        color=cat["color"], guild=g, author=m,
+    sections_list = [
+        ("📝", "Beschreibe dein Anliegen",
+         "Bitte beschreibe dein Anliegen **so genau wie möglich**.\n"
+         "Füge Screenshots, Beweise oder Links bei wenn relevant."),
+        ("⏱️", "Bearbeitungszeit",
+         "Das Team meldet sich in der Regel innerhalb **weniger Minuten**.\n"
+         "Bitte habe etwas Geduld — wir kümmern uns!"),
+        ("🔒", "Nach dem Schließen",
+         "Beim Schließen erhältst du **per DM** ein\n"
+         "vollständiges **HTML-Transcript** der Konversation."),
+    ]
+    emb = banner_embed(
+        headline=f"Ticket  ❖  {cat['label']}",
+        subline=f"**Hallo {m.mention}!** {cat['emoji']}\n*Vielen Dank für dein Anliegen — ein Team-Mitglied meldet sich gleich.*",
+        sections=sections_list,
+        color=cat["color"], guild=g, author=m, accent=cat["emoji"],
+        footer=f"Ticket-Opener: {m.id}  ❖  Kategorie: {cat['label']}",
     )
     if extra_fields:
         for k, v in extra_fields.items():
@@ -1553,14 +1607,23 @@ async def run_setup(g: discord.Guild, status_msg: Optional[discord.Message], wip
         status_msg = await safe_edit(status_msg, embed=fuse_embed("💬  Befülle wichtige Kanäle…", "", INFO_COLOR, guild=g)) or status_msg
         await fill_channels(g)
 
-        done = fuse_embed(
-            "✅  Setup abgeschlossen!",
-            f"**{SERVER_NAME}** ist komplett eingerichtet.\n\n"
-            f"➤  🎭  Rollen:      **{len(ROLES)}**\n"
-            f"➤  📁  Kategorien:  **{len(STRUCTURE)}**\n"
-            f"➤  💬  Kanäle:      **{sum(len(c['channels']) for c in STRUCTURE)}**\n\n"
-            "⚠️  *Lasse die **Bot-Rolle** ganz oben.*",
-            SUCCESS_COLOR, guild=g,
+        done = banner_embed(
+            headline="Setup abgeschlossen!",
+            subline=f"**{SERVER_NAME}** *ist komplett eingerichtet.* 🎉",
+            sections=[
+                ("📊", "Statistik",
+                 f"{BULLET_ARROW}  🎭  Rollen:        **{len(ROLES)}**\n"
+                 f"{BULLET_ARROW}  📁  Kategorien:   **{len(STRUCTURE)}**\n"
+                 f"{BULLET_ARROW}  💬  Kanäle:        **{sum(len(c['channels']) for c in STRUCTURE)}**"),
+                ("⚠️", "Wichtig",
+                 "Lasse die **Bot-Rolle** ganz oben in der Hierarchie.\n"
+                 "Nutze `!stats-setup` für Live-Counter-Channels."),
+                ("🚀", "Nächste Schritte",
+                 f"{BULLET_DOT}  `!stats-setup` für Live-Stats\n"
+                 f"{BULLET_DOT}  Slash-Commands sind nach ~1 Min aktiv\n"
+                 f"{BULLET_DOT}  Owner-Rolle dir selbst vergeben"),
+            ],
+            color=SUCCESS_COLOR, guild=g, accent="✅",
         )
         if (await safe_edit(status_msg, embed=done)) is None:
             await post_status(g, done)
@@ -1628,17 +1691,22 @@ async def on_ready():
 @bot.command(name="start")
 @commands.has_permissions(administrator=True)
 async def start_cmd(ctx):
-    emb = fuse_embed(
-        title=f"⚙️  {SERVER_NAME}  •  SETUP WIZARD",
-        description=(
-            "### 💎  Willkommen zum Server-Setup!\n\n"
-            "Wähle eine Option:\n\n"
-            "🛑  **Abbruch** — Nichts tun.\n\n"
-            "➕  **Nur Hinzufügen** — Fehlendes ergänzen, Bestehendes bleibt.\n\n"
-            "♻️  **Komplett neu aufsetzen** — Alles löschen & neu erstellen.\n\n"
-            "⚠️  *Bot-Rolle ganz oben + Admin-Rechte erforderlich.*"
-        ),
-        color=BRAND_COLOR, guild=ctx.guild,
+    emb = banner_embed(
+        headline=f"{SERVER_NAME}  ❖  Setup Wizard",
+        subline="*Willkommen zum Server-Setup. Wähle unten eine Option.*",
+        sections=[
+            ("🛑", "Abbruch",
+             "Nichts tun, Wizard schließen."),
+            ("➕", "Nur Hinzufügen",
+             "Fehlende Rollen & Kanäle ergänzen — **Bestehendes bleibt**."),
+            ("♻️", "Komplett neu aufsetzen",
+             "**ALLES** löschen & neu erstellen *(mit Sicherheitsabfrage)*."),
+            ("⚠️", "Voraussetzungen",
+             f"{BULLET_ARROW}  **Bot-Rolle ganz oben** in der Hierarchie\n"
+             f"{BULLET_ARROW}  **Administrator-Rechte** erteilt"),
+        ],
+        color=BRAND_COLOR, guild=ctx.guild, accent="⚙️",
+        footer="FUSE | FS Setup  ❖  nur Admins",
     )
     await ctx.send(embed=emb, view=SetupView(ctx.author.id))
 
@@ -1705,17 +1773,23 @@ async def on_member_join(member: discord.Member):
 
     wc = discord.utils.get(g.text_channels, name="👋・willkommen")
     if wc:
-        emb = fuse_embed(
-            title=f"🎉  WILLKOMMEN IN {SERVER_NAME.upper()}!",
-            description=(
-                f"Hey {member.mention}!  Willkommen bei **{SERVER_NAME}** 💎\n"
-                f"Du bist unser **{g.member_count}. Member**.\n\n"
-                f"📜  Lies dir das <#📜・regelwerk> durch.\n"
-                f"✅  Verifiziere dich im <#✅・verify>.\n"
-                f"📋  Sende deine Bewerbung im <#📋・bewerbung>.\n\n"
-                f"*Bitte halte dich an die Regeln und geh freundlich mit allen um.*"
+        emb = banner_embed(
+            headline=f"Willkommen in {SERVER_NAME}!",
+            subline=(
+                f"**Hey {member.mention}!** 👋\n"
+                f"*Du bist unser  **{g.member_count}. Member**  — schön dass du da bist!*"
             ),
-            color=BRAND_COLOR, guild=g, author=member,
+            sections=[
+                ("📌", "Deine ersten Schritte",
+                 f"{BULLET_ARROW}  Lies dir das <#📜・regelwerk> durch\n"
+                 f"{BULLET_ARROW}  Verifiziere dich im <#✅・verify>\n"
+                 f"{BULLET_ARROW}  Sende deine Bewerbung im <#📋・bewerbung>"),
+                ("💎", "Sei willkommen",
+                 "*Bitte halte dich an die Regeln und geh freundlich mit allen Mitgliedern um.*\n"
+                 "**Viel Spaß bei uns!** 🎉"),
+            ],
+            color=BRAND_COLOR, guild=g, author=member, accent="🎉",
+            footer=f"User-ID: {member.id}  ❖  Account erstellt: {member.created_at.strftime('%d.%m.%Y')}",
         )
         await wc.send(content=member.mention, embed=emb)
 
@@ -1733,10 +1807,15 @@ async def on_member_remove(member: discord.Member):
     g = member.guild
     bye = discord.utils.get(g.text_channels, name="👋・tschüss")
     if bye:
-        emb = fuse_embed(
-            "👋  TSCHÜSS!",
-            f"**{member}** hat den Server verlassen.\nWir sind jetzt **{g.member_count}** Member.",
-            ERROR_COLOR, guild=g, author=member,
+        emb = banner_embed(
+            headline="Tschüss!",
+            subline=f"**{member}** *hat den Server verlassen.*",
+            sections=[
+                ("📊", "Aktueller Stand",
+                 f"{BULLET_DOT}  Wir sind jetzt **{g.member_count}** Member\n"
+                 f"{BULLET_DOT}  Beitritt: <t:{int(member.joined_at.timestamp())}:R>" if member.joined_at else f"Wir sind jetzt **{g.member_count}** Member"),
+            ],
+            color=ERROR_COLOR, guild=g, author=member, accent="👋",
         )
         await bye.send(embed=emb)
     log_ch = get_log_channel(g, "leave")
