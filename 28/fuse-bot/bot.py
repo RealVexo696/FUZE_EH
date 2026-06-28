@@ -339,26 +339,26 @@ STAFF_ROLE_NAMES = [
 # ─────────────────────────────────────────────────────────────────── #
 STRUCTURE: list[dict] = [
     # ═══════════════════════════════════════════════════════════════
-    # 📩  WILLKOMMEN
+    # 📩  WILLKOMMEN  (alles read-only außer „tschüss" wird vom Bot bedient)
     # ═══════════════════════════════════════════════════════════════
     {
         "category": "📩 ✘ WILLKOMMEN", "visibility": "lobby",
         "channels": [
-            {"name": "👋・willkommen",   "type": "text", "visibility": "lobby"},
-            {"name": "📜・regelwerk",    "type": "text", "visibility": "lobby"},
-            {"name": "✅・verify",       "type": "text", "visibility": "verify_only"},
-            {"name": "👋・tschüss",      "type": "text", "visibility": "lobby"},
+            {"name": "👋・willkommen",   "type": "text", "visibility": "lobby",       "readonly": True},
+            {"name": "📜・regelwerk",    "type": "text", "visibility": "lobby",       "readonly": True},
+            {"name": "✅・verify",       "type": "text", "visibility": "verify_only", "readonly": True},
+            {"name": "👋・tschüss",      "type": "text", "visibility": "lobby",       "readonly": True},
         ],
     },
 
     # ═══════════════════════════════════════════════════════════════
-    # 📋  BEWERBUNG
+    # 📋  BEWERBUNG  (Info-Channels readonly, Chat & Bewerbung schreibbar)
     # ═══════════════════════════════════════════════════════════════
     {
         "category": "📋 ✘ BEWERBUNG", "visibility": "bewerbung",
         "channels": [
-            {"name": "❓・bewerbungs-info", "type": "text",  "visibility": "bewerbung"},
-            {"name": "📋・bewerbung",       "type": "text",  "visibility": "bewerbung"},
+            {"name": "❓・bewerbungs-info", "type": "text",  "visibility": "bewerbung", "readonly": True},
+            {"name": "📋・bewerbung",       "type": "text",  "visibility": "bewerbung", "readonly": True},
             {"name": "👾・bewerbungs-chat", "type": "text",  "visibility": "bewerbung"},
             {"name": "🎙️・warteraum",       "type": "voice", "visibility": "bewerbung"},
             {"name": "🚪・einreise-1",      "type": "voice", "visibility": "bewerbung", "locked": True},
@@ -367,33 +367,33 @@ STRUCTURE: list[dict] = [
     },
 
     # ═══════════════════════════════════════════════════════════════
-    # 🎫  SUPPORT
+    # 🎫  SUPPORT  (beide Info-Channels readonly)
     # ═══════════════════════════════════════════════════════════════
     {
         "category": "🎫 ✘ SUPPORT", "visibility": "member",
         "channels": [
-            {"name": "📖・ticket-info",   "type": "text", "visibility": "member"},
-            {"name": "🎫・ticket-öffnen", "type": "text", "visibility": "member"},
+            {"name": "📖・ticket-info",   "type": "text", "visibility": "member", "readonly": True},
+            {"name": "🎫・ticket-öffnen", "type": "text", "visibility": "member", "readonly": True},
         ],
     },
 
     # ═══════════════════════════════════════════════════════════════
-    # 🔔  INFOS
+    # 🔔  INFOS  (alle Info-Channels readonly — nur Team postet hier)
     # ═══════════════════════════════════════════════════════════════
     {
         "category": "🔔 ✘ INFOS", "visibility": "member",
         "channels": [
-            {"name": "🔔・ankündigungen",  "type": "text"},
-            {"name": "📰・server-news",    "type": "text"},
-            {"name": "🎉・events",         "type": "text"},
-            {"name": "🚀・boosts",         "type": "text"},
-            {"name": "🤝・partner",        "type": "text"},
-            {"name": "✅・activity-check", "type": "text"},
+            {"name": "🔔・ankündigungen",  "type": "text", "readonly": True},
+            {"name": "📰・server-news",    "type": "text", "readonly": True},
+            {"name": "🎉・events",         "type": "text", "readonly": True},
+            {"name": "🚀・boosts",         "type": "text", "readonly": True},
+            {"name": "🤝・partner",        "type": "text", "readonly": True},
+            {"name": "✅・activity-check", "type": "text", "readonly": True},
         ],
     },
 
     # ═══════════════════════════════════════════════════════════════
-    # 💬  COMMUNITY
+    # 💬  COMMUNITY  (alles schreibbar — das ist der Hauptbereich)
     # ═══════════════════════════════════════════════════════════════
     {
         "category": "💬 ✘ COMMUNITY", "visibility": "member",
@@ -405,23 +405,23 @@ STRUCTURE: list[dict] = [
             {"name": "💡・vorschläge",    "type": "text"},
             {"name": "🎂・geburtstage",   "type": "text"},
             {"name": "🤖・bot-commands",  "type": "text"},
-            {"name": "😂・hall-of-shame", "type": "text"},
+            {"name": "😂・hall-of-shame", "type": "text", "readonly": True},
         ],
     },
 
     # ═══════════════════════════════════════════════════════════════
-    # 📱  SOCIALMEDIA
+    # 📱  SOCIALMEDIA  (alle Showcase-Channels readonly — nur Team postet)
     # ═══════════════════════════════════════════════════════════════
     {
         "category": "📱 ✘ SOCIALMEDIA", "visibility": "member",
         "channels": [
-            {"name": "📱・socialmedia",   "type": "text"},
-            {"name": "📸・instagram",     "type": "text"},
-            {"name": "🎵・tiktok",        "type": "text"},
-            {"name": "🎬・youtube",       "type": "text"},
-            {"name": "🎮・twitch",        "type": "text"},
-            {"name": "🎥・meeting-clips", "type": "text"},
-            {"name": "🎞️・free-tt-vids",  "type": "text"},
+            {"name": "📱・socialmedia",   "type": "text", "readonly": True},
+            {"name": "📸・instagram",     "type": "text", "readonly": True},
+            {"name": "🎵・tiktok",        "type": "text", "readonly": True},
+            {"name": "🎬・youtube",       "type": "text", "readonly": True},
+            {"name": "🎮・twitch",        "type": "text", "readonly": True},
+            {"name": "🎥・meeting-clips", "type": "text", "readonly": True},
+            {"name": "🎞️・free-tt-vids",  "type": "text", "readonly": True},
         ],
     },
 
@@ -444,33 +444,33 @@ STRUCTURE: list[dict] = [
     },
 
     # ═══════════════════════════════════════════════════════════════
-    # 🧱  FUSE MERCH
+    # 🧱  FUSE MERCH  (alle Showcase-Channels readonly)
     # ═══════════════════════════════════════════════════════════════
     {
         "category": "🧱 ✘ FUSE MERCH", "visibility": "member",
         "channels": [
-            {"name": "🦺・weste",   "type": "text"},
-            {"name": "📿・armband", "type": "text"},
-            {"name": "👕・merch",   "type": "text"},
-            {"name": "👕・trikot",  "type": "text"},
-            {"name": "👕・polo",    "type": "text"},
-            {"name": "🧢・cap",     "type": "text"},
+            {"name": "🦺・weste",   "type": "text", "readonly": True},
+            {"name": "📿・armband", "type": "text", "readonly": True},
+            {"name": "👕・merch",   "type": "text", "readonly": True},
+            {"name": "👕・trikot",  "type": "text", "readonly": True},
+            {"name": "👕・polo",    "type": "text", "readonly": True},
+            {"name": "🧢・cap",     "type": "text", "readonly": True},
         ],
     },
 
     # ═══════════════════════════════════════════════════════════════
-    # 📓  GANG INFOS
+    # 📓  GANG INFOS  (alles readonly — nur Team postet Infos)
     # ═══════════════════════════════════════════════════════════════
     {
         "category": "📓 ✘ GANG INFOS", "visibility": "member",
         "channels": [
-            {"name": "💗・farbe",         "type": "text"},
-            {"name": "🎨・rollensystem",  "type": "text"},
-            {"name": "🎮・roblox-gruppe", "type": "text"},
-            {"name": "🏠・anwesen",       "type": "text"},
-            {"name": "🚗・fuhrpark",      "type": "text"},
-            {"name": "💰・kasse",         "type": "text"},
-            {"name": "🛡️・partnerschaft", "type": "text"},
+            {"name": "💗・farbe",         "type": "text", "readonly": True},
+            {"name": "🎨・rollensystem",  "type": "text", "readonly": True},
+            {"name": "🎮・roblox-gruppe", "type": "text", "readonly": True},
+            {"name": "🏠・anwesen",       "type": "text", "readonly": True},
+            {"name": "🚗・fuhrpark",      "type": "text", "readonly": True},
+            {"name": "💰・kasse",         "type": "text", "readonly": True},
+            {"name": "🛡️・partnerschaft", "type": "text", "readonly": True},
         ],
     },
 
@@ -522,7 +522,7 @@ STRUCTURE: list[dict] = [
     },
 
     # ═══════════════════════════════════════════════════════════════
-    # 📋  LOGS — alles wird mitgeschrieben
+    # 📋  LOGS — nur Bot postet hier (NICHT readonly — sonst kann Bot nicht schreiben)
     # ═══════════════════════════════════════════════════════════════
     {
         "category": "📋 ✘ LOGS", "visibility": "staff",
@@ -572,7 +572,8 @@ def get_log_channel(g: discord.Guild, log_type: str) -> Optional[discord.TextCha
     return None
 
 
-def build_overwrites(g: discord.Guild, visibility: str, locked: bool = False) -> dict:
+def build_overwrites(g: discord.Guild, visibility: str, locked: bool = False,
+                     readonly: bool = False) -> dict:
     everyone   = g.default_role
     unverified = find_role(g, KEY_ROLES["unverified"])
     verified   = find_role(g, KEY_ROLES["verified"])
@@ -622,14 +623,15 @@ def build_overwrites(g: discord.Guild, visibility: str, locked: bool = False) ->
         if verified:   ow[verified]   = discord.PermissionOverwrite(view_channel=False)
         if member:     ow[member]     = discord.PermissionOverwrite(view_channel=False)
 
-    # Staff sieht alles (außer owner_only)
+    # Staff sieht alles (außer owner_only) — DARF immer schreiben (auch in readonly!)
     if visibility != "owner_only":
         for rn in STAFF_ROLE_NAMES:
             r = find_role(g, rn)
             if r:
                 ow[r] = discord.PermissionOverwrite(view_channel=True, send_messages=True,
                                                     connect=True, speak=True, read_message_history=True,
-                                                    manage_messages=True)
+                                                    manage_messages=True, add_reactions=True,
+                                                    embed_links=True, attach_files=True)
     else:
         for rn in ("👑 Owner", "👑 Co-Owner"):
             r = find_role(g, rn)
@@ -647,6 +649,44 @@ def build_overwrites(g: discord.Guild, visibility: str, locked: bool = False) ->
             if r:
                 ow[r] = discord.PermissionOverwrite(view_channel=True, send_messages=True,
                                                     connect=True, speak=True)
+
+    # READONLY: niemand außer Staff darf schreiben/reagieren
+    # (Staff-Overwrites bleiben oben drüber → können trotzdem posten)
+    if readonly:
+        readonly_perm = discord.PermissionOverwrite(
+            send_messages=False, send_messages_in_threads=False,
+            create_public_threads=False, create_private_threads=False,
+            add_reactions=False,
+        )
+        # @everyone als Basis
+        base_eo = ow.get(everyone, discord.PermissionOverwrite())
+        base_eo.update(
+            send_messages=False, send_messages_in_threads=False,
+            create_public_threads=False, create_private_threads=False,
+            add_reactions=False,
+        )
+        ow[everyone] = base_eo
+        # Alle bekannten Member-Rollen schreibverbot
+        for role_name in (KEY_ROLES["member"], KEY_ROLES["verified"],
+                          KEY_ROLES["unverified"], KEY_ROLES["bewerber"],
+                          "🤝 Fuse", "💕 Friend", "🧪 Trial-Member",
+                          "💠 Member+", "🏆 Veteran", "⭐ Elite",
+                          "💖 Booster", "💖 Boost-King", "💎 Nitro",
+                          "🎬 YouTuber", "🎮 Twitch-Streamer", "🎵 TikToker",
+                          "🖌️ Content-Creator", "🎶 DJ",
+                          "💎 Boss", "💎 Underboss", "💎 Consigliere",
+                          "💎 Capo", "💎 Soldato", "🔫 Hitman", "🔫 Enforcer",
+                          "💊 Dealer", "🚚 Smuggler", "🏎️ Driver",
+                          "🔧 Mechanic", "🛡️ Bodyguard"):
+            r = find_role(g, role_name)
+            if r:
+                existing = ow.get(r, discord.PermissionOverwrite())
+                existing.update(
+                    send_messages=False, send_messages_in_threads=False,
+                    create_public_threads=False, create_private_threads=False,
+                    add_reactions=False,
+                )
+                ow[r] = existing
 
     if muted:
         ow[muted] = discord.PermissionOverwrite(send_messages=False, speak=False, add_reactions=False,
@@ -779,16 +819,17 @@ async def create_structure(g: discord.Guild) -> None:
             ctype   = ch_def.get("type", "text")
             ch_vis  = ch_def.get("visibility", cat_vis)
             locked  = ch_def.get("locked", False)
+            readonly = ch_def.get("readonly", False)
 
             existing = find_channel(g, ch_name)
             if existing:
                 await _safe(
-                    lambda: existing.edit(overwrites=build_overwrites(g, ch_vis, locked=locked)),
+                    lambda: existing.edit(overwrites=build_overwrites(g, ch_vis, locked=locked, readonly=readonly)),
                     label=f"edit ch {ch_name}",
                 )
                 continue
 
-            chan_ow = build_overwrites(g, ch_vis, locked=locked)
+            chan_ow = build_overwrites(g, ch_vis, locked=locked, readonly=readonly)
             if ctype == "text":
                 factory = lambda: g.create_text_channel(ch_name, category=category, overwrites=chan_ow, reason="FUSE Setup")
             elif ctype == "voice":
