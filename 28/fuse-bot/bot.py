@@ -817,6 +817,9 @@ async def wipe_server(g: discord.Guild) -> None:
         if r.is_default() or r.managed or r >= g.me.top_role:
             continue
         await _safe(lambda: r.delete(reason="FUSE Reset"), label=f"del role {r.name}")
+    # Stats-IDs in DB resetten (Channels wurden ja gelöscht)
+    db.DATA["stats_channels"] = {}
+    db.save()
     log.info("Wipe abgeschlossen.")
 
 
@@ -922,6 +925,14 @@ async def run_setup(g: discord.Guild, status_msg: Optional[discord.Message], wip
         )
         status_msg = await safe_edit_view(status_msg, new_status) or status_msg
         await fill_channels(g)
+
+        # 📊 Stats-Channels (ganz oben, für alle sichtbar) automatisch einrichten
+        try:
+            stats_cog = bot.get_cog("Stats")
+            if stats_cog:
+                await stats_cog.ensure_setup(g)
+        except Exception as e:
+            log.warning("Stats-Auto-Setup fehlgeschlagen: %s", e)
 
         done = panels.setup_done_panel(
             g,
