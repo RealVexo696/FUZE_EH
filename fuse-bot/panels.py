@@ -560,7 +560,7 @@ class ApplicationAcceptButton(ui.Button):
                      f"Erkunde die Community, lerne andere kennen, hab Spaß!"),
                     ("📌", "Empfohlene Kanäle",
                      f"{ARROW}  <#💬・chat>\n"
-                     f"{ARROW}  <#🔔・ankündigung>\n"
+                     f"{ARROW}  <#🔔・ankündigungen>\n"
                      f"{ARROW}  <#🎫・ticket-öffnen>"),
                 ],
                 color=SUCCESS_COLOR,
