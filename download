@@ -1,0 +1,15 @@
+# ─── Pflicht ───────────────────────────────────────────
+DISCORD_TOKEN=dein_bot_token
+
+# ─── Optional ──────────────────────────────────────────
+PREFIX=!
+SERVER_NAME=FUSE | FS
+
+# ─── Dashboard (optional) ──────────────────────────────
+# Setze auf 0 um Dashboard zu deaktivieren
+ENABLE_DASHBOARD=1
+OAUTH_CLIENT_ID=deine_application_id
+OAUTH_CLIENT_SECRET=dein_oauth_secret
+OAUTH_REDIRECT_URI=https://deinapp.up.railway.app/callback
+DASHBOARD_SECRET=zufaelliger_string_min_32_zeichen
+# PORT wird von Railway automatisch gesetzt
